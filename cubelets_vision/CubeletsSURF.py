@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-#import roslib; roslib.load_manifest('beginner_tutorials')
+""" Library for Cubelet SURF """
+
 import roslib; roslib.load_manifest('cubelets_vision')
 import sys
 import rospy
@@ -30,21 +30,28 @@ def getFeatures(img, hessThresh=1000):
     """ get features of image """
     return cv.ExtractSURF(img, None, cv.CreateMemStorage(), (0, hessThresh, 3, 1))
 
-#def getMatchedFeatures(template, test, descriptor_radius=1):
-def getMatchedFeatures(template, test, thresh=0.75):
+def getMultiMatchFeatures(template, test, descriptor_radius):
     """ match features by distance
     return list of features (templateFeatureIndex, testFeatureIndices) """
+    (templateKeypoints, templateDescriptors) = template
+    (testKeypoints, testDescriptors) = test
+    kdtree = KDTree(testDescriptors)
+    results = []
+    for i in range(len(templateDescriptors)):
+        results += [(i, kdtree.query_ball_point(templateDescriptors[i], descriptor_radius))]
+    return results
+
+def getSingleMatchFeatures(template, test, thresh=0.75):
+    """ Chen's code """
     (templateKeypoints, templateDescriptors) = getFeatures(template)
     (testKeypoints, testDescriptors) = getFeatures(test)
     kdtree = KDTree(testDescriptors)
-    #results = []
     m1 = []
     m2 = []
 
     for i in range(len(templateDescriptors)):
 	(dist,index) = kdtree.query(templateDescriptors[i],2)
 	if ((dist[0] / dist[1]) < thresh):
-        #results += [(i, kdtree.query_ball_point(templateDescriptors[i], descriptor_radius))]
 	    k1 = templateKeypoints[i]
 	    k2 = testKeypoints[index[0]]
 
@@ -76,7 +83,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.65, cente
     """ match features to a template """
     # TODO annotate matches with features
     (width, height) = imSize
-    matchedFeatures = getMatchedFeatures(template, test, descriptor_radius)
+    matchedFeatures = getMultiMatchFeatures(template, test, descriptor_radius)
     
     (templateKeypoints, templateDescriptors) = template
     (testKeypoints, testDescriptors) = test
@@ -516,7 +523,7 @@ def homographyTest():
 
 def sideBySideMatchView(gray1,gray2,hessianThresh):
     #p1,p2 = imageMatch(gray1,gray2,hessianThresh)
-    p1,p2 = getMatchedFeatures(gray1, gray2, 1)
+    p1,p2 = getSingleMatchFeatures(gray1, gray2, 1)
     w1, h1 = cv.GetSize(gray1)[:2]
     w2, h2 = cv.GetSize(gray2)[:2]
     vis = numpy.zeros((max(h1, h2), w1+w2), numpy.uint8)
@@ -547,7 +554,7 @@ def sideBySideMatchView(gray1,gray2,hessianThresh):
 
 def overlayMatchView(gray1,gray2,hessianThresh):
     #p1,p2 = imageMatch(gray1,gray2,hessianThresh)
-    p1,p2 = getMatchedFeatures(gray1, gray2, 1)
+    p1,p2 = getSingleMatchFeatures(gray1, gray2, 1)
     w1, h1 = cv.GetSize(gray1)[:2]
     w2, h2 = cv.GetSize(gray2)[:2]
 
@@ -712,27 +719,3 @@ def sortTest():
 	test2 = sorted(test, key=lambda student: student[2])
 
 	print test2
-
-if __name__ == '__main__':
-    try:
-	print "Select from the following demos:"
-	print "s: Side by Side SURF stable feature video demo"
-	print "o: Overlaid SURF stable feature video demo"
-	print "m: Stable feature template matching demo"
-
-
-	c = raw_input()
-
-        if c.strip() == 's':
-	    surfStableFeatureVideoDemo(0)
-        elif c.strip() == 'o':
-	    surfStableFeatureVideoDemo(1)
-        elif c.strip() == 'm':
-	    surfMatchVideoDemo()
-	else:
-	    "No valid option selected."
-	#homographyTest()
-	#cameraMatrixTest()
-        #matchTemplateImage()
-    except rospy.ROSInterruptException: 
-        pass
