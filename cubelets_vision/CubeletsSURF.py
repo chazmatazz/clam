@@ -99,7 +99,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_r
             rot = rotationMatrix2x2(math.radians(testDirection - templateDirection))
             (x,y) = templatePoint
             offset = (x * rot[0,0] + y * rot[1,0], x * rot[0,1] + y * rot[1,1])
-            featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)#1.0 * testSize/templateSize * 
+            featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)# * 1.0 * testSize/templateSize
             upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
     
     # create a image for showing matched features and upper left voting
