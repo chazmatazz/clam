@@ -13,9 +13,13 @@ BUILDING
 
 **1) Download CLAM**
 
+   (If you plan to modify the code, you may want to fork this repository first.)
+
 		git clone git@github.com:DaveTColeman/CLAM.git
 
 **2) Install Stack Dependencies**
+
+   (Installing means check the dependencies out into your ros directory.)
 
    Package dynamixel_hardware_interface:
 
@@ -35,9 +39,9 @@ BUILDING
 
 **4) Setup the Dynamixel2USB controllers**
 
-   - Copy the file /setup/50-usb-serial.rules to /etc/udev/rules.d/
+   - Copy the file setup/50-usb-serial.rules to /etc/udev/rules.d/
 
-   - Disable a conflicting system udev rule if necessary located at /lib/udev/rules.d/95-upower-wup.rules
+   - Disable a conflicting system udev rule if necessary located at /lib/udev/rules.d/95-upower-wup.rules 
 
 
 RUN

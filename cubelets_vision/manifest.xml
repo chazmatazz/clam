@@ -1,0 +1,21 @@
+<package>
+  <description brief="cubelets_vision">
+
+     Cubelets vision
+
+  </description>
+  <author>Charles</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cubelets_vision</url>
+
+<depend package="std_msgs" />
+<depend package="rospy" />
+<depend package="roscpp" />
+<depend package="cv_bridge" />
+<rosdep name="opencv2.3" />
+<rosdep name="python-numpy" />
+
+</package>
+
+
