@@ -11,7 +11,7 @@ from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
 
 BLACK_CUBE = "images/black_cube.png"
-CUBE_ARRAY = BLACK_CUBE#"images/cubeArray.png"
+CUBE_ARRAY = "images/synthetic.png"#"images/cubeArray.png"
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
 UPPER_LEFT_IMAGE = "Upper Left"
@@ -80,7 +80,7 @@ def rotationMatrix2x2(radians):
     cosa = math.cos(radians)
     return numpy.matrix([[cosa, sina], [-sina, cosa]])
 
-def findMatches(imSize, testImage, template, test, descriptor_radius=0.01, vote_radius=20, vote_threshold=0.03, exclusion_radius=75):
+def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_radius=20, vote_threshold=0.03, exclusion_radius=75):
     """ match features to a template """
     # TODO annotate matches with features
     (width, height) = imSize
@@ -99,7 +99,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.01, vote_
             rot = rotationMatrix2x2(math.radians(testDirection - templateDirection))
             (x,y) = templatePoint
             offset = (x * rot[0,0] + y * rot[1,0], x * rot[0,1] + y * rot[1,1])
-            featureUpperLeft = numpy.array(testPoint) - 1.0 * testSize/templateSize * numpy.array(offset)
+            featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)#1.0 * testSize/templateSize * 
             upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
     
     # create a image for showing matched features and upper left voting
