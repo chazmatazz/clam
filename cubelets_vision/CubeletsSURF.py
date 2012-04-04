@@ -11,12 +11,13 @@ from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
 
 BLACK_CUBE = "images/black_cube.png"
-CUBE_ARRAY = "images/cubeArray.png"
+CUBE_ARRAY = BLACK_CUBE#"images/cubeArray.png"
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
-CENTER_IMAGE = "Center"
-CONVOLVED_CENTER_IMAGE = "Convolved Center"
+UPPER_LEFT_IMAGE = "Upper Left"
+CONVOLVED_UPPER_LEFT_IMAGE = "Convolved Upper Left"
 HASH_CIRCLES = "Hash Circles"
+VOTING_IMAGE = "Upper Left Voting"
 CAMERA_INDEX = 0
 MATCH_SIZE = 5
 BRIGHTENED_IMAGE = "Brightened Image"
@@ -74,12 +75,12 @@ def getStableFeatures(frame1,frame2,thresh=0.75):
 	    stableDescriptors.append(f2Descriptors[index[0]])
     return stableKeypoints,stableDescriptors
 
-def rotationMatrix2x2(angle):
-    sina = math.sin(angle)
-    cosa = math.cos(angle)
+def rotationMatrix2x2(radians):
+    sina = math.sin(radians)
+    cosa = math.cos(radians)
     return numpy.matrix([[cosa, sina], [-sina, cosa]])
 
-def findMatches(imSize, testImage, template, test, descriptor_radius=0.65, center_radius=20, center_threshold=0.03, exclusion_radius=75):
+def findMatches(imSize, testImage, template, test, descriptor_radius=0.01, vote_radius=20, vote_threshold=0.03, exclusion_radius=75):
     """ match features to a template """
     # TODO annotate matches with features
     (width, height) = imSize
@@ -88,70 +89,98 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.65, cente
     (templateKeypoints, templateDescriptors) = template
     (testKeypoints, testDescriptors) = test
     
-    # retrieve centers in image space
-    centers = []
+    # retrieve upper left in image space
+    upper_lefts = []
     for (templateFeatureIndex, testFeatureIndices) in matchedFeatures:
         (templatePoint, templateLaplacian, templateSize, templateDirection, templateHessian) = templateKeypoints[templateFeatureIndex]
         for testFeatureIndex in testFeatureIndices:
             (testPoint, testLaplacian, testSize, testDirection, testHessian) = testKeypoints[testFeatureIndex]
-            # vote for center
-            rot = rotationMatrix2x2(testDirection - templateDirection)
+            # vote for upper left
+            rot = rotationMatrix2x2(math.radians(testDirection - templateDirection))
             (x,y) = templatePoint
             offset = (x * rot[0,0] + y * rot[1,0], x * rot[0,1] + y * rot[1,1])
-            featureCenter = numpy.array(testPoint) - 1.0 * testSize/templateSize * numpy.array(offset)
-            centers += [(testKeypoints[testFeatureIndex], featureCenter)]
+            featureUpperLeft = numpy.array(testPoint) - 1.0 * testSize/templateSize * numpy.array(offset)
+            upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
     
-    def zero(img):
+    # create a image for showing matched features and upper left voting
+    voteImage = cv.CreateMat(height, width, cv.CV_8UC3)
+    cv.CvtColor(testImage, voteImage, cv.CV_GRAY2BGR)
+    
+    class ColorIndex:
+        """ Creates a set of evenly spaced color bytes """
+        def __init__(self, length):
+            self.length = length
+        
+        def getColor(self, idx):
+            n = idx * 255 * 255 * 255 / self.length
+            return ((n/(255*255))%255, (n/255)%255, n%255)
+
+    def drawVote(img, color, testKeypoint, vote):
+        (featurePoint, laplacian, size, direction, hessian) = testKeypoint
+        p1 = (int(featurePoint[0]), int(featurePoint[1]))
+        radians = math.radians(direction)
+        p2 = (int(featurePoint[0]+size*math.cos(radians)), int(featurePoint[1]+size*math.sin(radians)))
+        p3 = (int(vote[0]), int(vote[1]))
+        cv.Circle(img, p1, size, color)
+        cv.Line(img, p1, p2, color)
+        cv.Line(img, p1, p3, color)
+        
+    colorIndex = ColorIndex(len(template[0]))
+    for upper_left in upper_lefts:
+        (templateFeatureIndex, testKeypoint, featureUpperLeft) = upper_left
+        drawVote(voteImage, colorIndex.getColor(templateFeatureIndex), testKeypoint, featureUpperLeft)
+    
+    cv.ShowImage(VOTING_IMAGE, voteImage)
+    
+    def zeroC1(img):
         for i in range(height):
             for j in range(width):
                 img[i,j] = 0
+    
+    # create a upper left image
+    upperLeftImage = cv.CreateMat(height, width, cv.CV_32FC1)
+    zeroC1(upperLeftImage)
 
-    # create a center image
-    centerImage = cv.CreateMat(height, width, cv.CV_32FC1)
-    zero(centerImage)
-
-    for center in centers:
-        (k, p) = center
+    for upper_left in upper_lefts:
+        (i, k, p) = upper_left
         x = round(p[0])
         y = round(p[1])
         if 0 <= x and x < width and 0 <= y and y < height:
-            centerImage[y, x] += 1
+            upperLeftImage[y, x] += 1
     
-    cv.ShowImage(CENTER_IMAGE, centerImage)
+    cv.ShowImage(UPPER_LEFT_IMAGE, upperLeftImage)
     
-    # find bright points in centers image
-    convolvedCenterImage = cv.CreateMat(height, width, cv.CV_32FC1)
-    cv.Smooth(centerImage, convolvedCenterImage, cv.CV_GAUSSIAN, center_radius*2+1, -1)
+    # find bright points in upper left image
+    convolvedUpperLeftImage = cv.CreateMat(height, width, cv.CV_32FC1)
+    cv.Smooth(upperLeftImage, convolvedUpperLeftImage, cv.CV_GAUSSIAN, vote_radius*2+1, -1)
     
-    cv.ShowImage(CONVOLVED_CENTER_IMAGE, convolvedCenterImage)
+    cv.ShowImage(CONVOLVED_UPPER_LEFT_IMAGE, convolvedUpperLeftImage)
     
-    # get average value of convolved center image
-    
+    # get average value of convolved upper left image
     sum = 0
     for i in range(height):
         for j in range(width):
-            sum += convolvedCenterImage[i,j]
-    
+            sum += convolvedUpperLeftImage[i,j]
     
     brightenedImage = cv.CreateMat(height, width, cv.CV_32FC1)        
     for i in range(height):
         for j in range(width):
-            brightenedImage[i, j] = convolvedCenterImage[i, j] * testImage[i, j] * sum / (height * width) 
+            brightenedImage[i, j] = convolvedUpperLeftImage[i, j] * testImage[i, j] * sum / (height * width) 
             
     cv.ShowImage(BRIGHTENED_IMAGE, brightenedImage)
     
-    # find points in centers image above threshold
+    # find points in convolved upper left image above threshold
     aboveThreshold = []
     for i in range(height):
         for j in range(width):
-            if convolvedCenterImage[i,j] > center_threshold:
-                aboveThreshold += [(convolvedCenterImage[i,j], (j,i))]
+            if convolvedUpperLeftImage[i,j] > vote_threshold:
+                aboveThreshold += [(convolvedUpperLeftImage[i,j], (j,i))]
 
     aboveThresholdSorted = sorted(aboveThreshold, key=lambda elt: elt[0])
 
-    # find spaced points in centers image
+    # find spaced points in upper left image
     hashImage = cv.CreateMat(height, width, cv.CV_8UC1) # 0 is candidate, not candidate otherwise
-    zero(hashImage)
+    zeroC1(hashImage)
     
     matches = []
     for elt in aboveThresholdSorted:
@@ -162,7 +191,6 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.65, cente
             cv.Circle(hashImage, p, exclusion_radius, 255, -1)
     cv.ShowImage(HASH_CIRCLES, hashImage)
     return matches    
-            
         
 def showMatchedImage(testImage, matches):
     for match in matches:
