@@ -20,6 +20,7 @@ HASH_CIRCLES = "Hash Circles"
 VOTING_IMAGE = "Upper Left Voting"
 CAMERA_INDEX = 0
 MATCH_SIZE = 5
+INLIER_SIZE = 10
 BRIGHTENED_IMAGE = "Brightened Image"
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
@@ -80,6 +81,67 @@ def rotationMatrix2x2(radians):
     cosa = math.cos(radians)
     return numpy.matrix([[cosa, sina], [-sina, cosa]])
 
+def getInliers(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, descriptor_radius=0.1):
+    templateImage = loadImage(templateImagePath)
+    testImage = loadImage(testImagePath)
+    
+    template = getFeatures(templateImage)
+    test = getFeatures(testImage)
+    imSize = cv.GetSize(testImage)
+    (width, height) = imSize
+
+    matchedFeatures = getMultiMatchFeatures(template, test, descriptor_radius)
+
+    matches = findMatches(imSize, testImage, template, test)
+    upper_lefts = getUpperLefts(matchedFeatures, template, test)
+
+    myMatchedImage = cv.CreateMat(height, width, cv.CV_32FC1)
+    zeroC1(myMatchedImage)
+
+    inliers = []
+    for match in matches:
+        currentInliers = []
+        points =[]
+        cv.Circle(myMatchedImage, match, INLIER_SIZE, 255, -1)
+        for upper_left in upper_lefts:
+            (i, k, p) = upper_left
+            x = round(p[0])
+            y = round(p[1])
+            if 0 <= x and x < width and 0 <= y and y < height:
+                if myMatchedImage[y,x] == 255:
+                    currentInliers += [upper_left]
+        for node in currentInliers:
+            (index, keyPoint, upperLeft) = node
+            #print keyPoint
+            points += [keyPoint]
+        inliers += [(match,points)]
+        cv.Circle(myMatchedImage, match, INLIER_SIZE, 0, -1)
+
+    return inliers # in form of (inlier_point, array of keypoints that hit point)
+
+def getUpperLefts(matchedFeatures, template, test):
+	(templateKeypoints, templateDescriptors) = template
+	(testKeypoints, testDescriptors) = test
+	upper_lefts = []
+	for (templateFeatureIndex, testFeatureIndices) in matchedFeatures:
+		(templatePoint, templateLaplacian, templateSize, templateDirection, templateHessian) = templateKeypoints[templateFeatureIndex]
+		for testFeatureIndex in testFeatureIndices:
+			(testPoint, testLaplacian, testSize, testDirection, testHessian) = testKeypoints[testFeatureIndex]
+            		# vote for upper left
+			rot = rotationMatrix2x2(math.radians(testDirection - templateDirection))
+			(x,y) = templatePoint
+			offset = (x * rot[0,0] + y * rot[1,0], x * rot[0,1] + y * rot[1,1])
+			featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)# * 1.0 * testSize/templateSize
+			upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
+	return upper_lefts
+
+def zeroC1(img):
+    imSize = cv.GetSize(img)
+    (width, height) = imSize
+    for i in range(height):
+        for j in range(width):
+            img[i,j] = 0
+
 def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_radius=20, vote_threshold=0.03, exclusion_radius=75):
     """ match features to a template """
     # TODO annotate matches with features
@@ -88,19 +150,12 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_r
     
     (templateKeypoints, templateDescriptors) = template
     (testKeypoints, testDescriptors) = test
-    
+
+ #   for key in testKeypoints:
+  #      print key
+	
     # retrieve upper left in image space
-    upper_lefts = []
-    for (templateFeatureIndex, testFeatureIndices) in matchedFeatures:
-        (templatePoint, templateLaplacian, templateSize, templateDirection, templateHessian) = templateKeypoints[templateFeatureIndex]
-        for testFeatureIndex in testFeatureIndices:
-            (testPoint, testLaplacian, testSize, testDirection, testHessian) = testKeypoints[testFeatureIndex]
-            # vote for upper left
-            rot = rotationMatrix2x2(math.radians(testDirection - templateDirection))
-            (x,y) = templatePoint
-            offset = (x * rot[0,0] + y * rot[1,0], x * rot[0,1] + y * rot[1,1])
-            featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)# * 1.0 * testSize/templateSize
-            upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
+    upper_lefts = getUpperLefts(matchedFeatures, template, test)
     
     # create a image for showing matched features and upper left voting
     voteImage = cv.CreateMat(height, width, cv.CV_8UC3)
@@ -132,11 +187,6 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_r
     
     cv.ShowImage(VOTING_IMAGE, voteImage)
     
-    def zeroC1(img):
-        for i in range(height):
-            for j in range(width):
-                img[i,j] = 0
-    
     # create a upper left image
     upperLeftImage = cv.CreateMat(height, width, cv.CV_32FC1)
     zeroC1(upperLeftImage)
@@ -149,6 +199,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_r
             upperLeftImage[y, x] += 1
     
     cv.ShowImage(UPPER_LEFT_IMAGE, upperLeftImage)
+    
     
     # find bright points in upper left image
     convolvedUpperLeftImage = cv.CreateMat(height, width, cv.CV_32FC1)
@@ -177,6 +228,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_r
                 aboveThreshold += [(convolvedUpperLeftImage[i,j], (j,i))]
 
     aboveThresholdSorted = sorted(aboveThreshold, key=lambda elt: elt[0])
+    aboveThresholdSorted.reverse()
 
     # find spaced points in upper left image
     hashImage = cv.CreateMat(height, width, cv.CV_8UC1) # 0 is candidate, not candidate otherwise
@@ -190,6 +242,8 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_r
             matches += [p]
             cv.Circle(hashImage, p, exclusion_radius, 255, -1)
     cv.ShowImage(HASH_CIRCLES, hashImage)
+
+    showMatchedImage(voteImage, matches)
     return matches    
         
 def showMatchedImage(testImage, matches):
@@ -741,6 +795,7 @@ def overlayKeyPoints(imgMat,keyPoints,color,offset=(0,0)):
 	cv.Line(overlaid, (px, py), (int(px+r*numpy.sin(fdir/numpy.pi)), int(py+r*numpy.cos(fdir/numpy.pi))), color)
     return overlaid
 
+#def 
 
 def sortTest():
 	test = [('john', 'A', 15), ('jane', 'B', 12), ('dave', 'B', 10)]
