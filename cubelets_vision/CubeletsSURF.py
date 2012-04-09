@@ -138,7 +138,7 @@ def getUpperLefts(matchedFeatures, template, test):
 			(x,y) = templatePoint
 			offset = (x * rot[0,0] + y * rot[1,0], x * rot[0,1] + y * rot[1,1])
 			featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)# * 1.0 * testSize/templateSize
-			upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
+			upper_lefts += [(templateKeypoints[templateFeatureIndex], testKeypoints[testFeatureIndex], featureUpperLeft)]
 	return upper_lefts
 
 def zeroC1(img):
