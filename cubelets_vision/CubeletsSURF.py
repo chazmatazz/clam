@@ -98,6 +98,8 @@ def getInliers(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, descripto
     myMatchedImage = cv.CreateMat(height, width, cv.CV_32FC1)
     zeroC1(myMatchedImage)
 
+    (templateKeypoints, templateDescriptors) = template
+
     inliers = []
     for match in matches:
         currentInliers = []
@@ -112,11 +114,15 @@ def getInliers(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, descripto
                     currentInliers += [upper_left]
         for node in currentInliers:
             (index, keyPoint, upperLeft) = node
-            #print keyPoint
-            points += [keyPoint]
+            #print node
+            
+            points += [(keyPoint,templateKeypoints[index])]
         inliers += [(match,points)]
         cv.Circle(myMatchedImage, match, INLIER_SIZE, 0, -1)
 
+    for i in inliers:
+        print i
+    cv.WaitKey()
     return inliers # in form of (inlier_point, array of keypoints that hit point)
 
 def getUpperLefts(matchedFeatures, template, test):
