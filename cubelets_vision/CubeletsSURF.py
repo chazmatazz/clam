@@ -138,7 +138,7 @@ def getUpperLefts(matchedFeatures, template, test):
 			(x,y) = templatePoint
 			offset = (x * rot[0,0] + y * rot[1,0], x * rot[0,1] + y * rot[1,1])
 			featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)# * 1.0 * testSize/templateSize
-			upper_lefts += [(templateKeypoints[templateFeatureIndex], testKeypoints[testFeatureIndex], featureUpperLeft)]
+			upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
 	return upper_lefts
 
 def zeroC1(img):
@@ -475,5 +475,6 @@ def overlayKeyPoints(imgMat,keyPoints,color,offset=(0,0)):
         cv.Circle(overlaid, (px, py), r, color)
 	cv.Line(overlaid, (px, py), (int(px+r*numpy.sin(fdir/numpy.pi)), int(py+r*numpy.cos(fdir/numpy.pi))), color)
     return overlaid
+
 
 
