@@ -452,25 +452,115 @@ def findObjPose(objPts,imgPts,focal_length):
 
 	return rvecs,tvecs
 
-def demoObjPose():
-	cubeSize = 1
-	o1 = [0.0, 0.0, 0.0]
-	o2 = [cubeSize, 0.0, 0.0]
-	o3 = [0.0, cubeSize, 0.0]
-	o4 = [0.0, 0.0, cubeSize]
-	objPts = [o1, o2, o3, o4]
+def demoFindObjPose():
+	img = cv.LoadImageM("images/redCubeTurned.png", cv.CV_LOAD_IMAGE_COLOR)
 
-	i1 = [37.0,70.0]
-	i2 = [84.0,73.0]
-	i3 = [38.0,5.0]
-	i4 = [0.0,69.0]
-	imgPts = [i1,i2,i3,i4]
+	cameraMatrix = cv.CreateMat(3,3,cv.CV_32FC1)
+	cv.SetZero(cameraMatrix)
+	cameraMatrix[0,0] = 560.0
+	cameraMatrix[0,2] = 300.0
+	cameraMatrix[1,1] = 560.0
+	cameraMatrix[1,2] = 230.0
+	cameraMatrix[2,2] = 1.0
 
-	rvecs,tvecs = findObjPose(objPts,imgPts,540)
+	distCoeffs = cv.CreateMat(4,1,cv.CV_32FC1)
+	distCoeffs[0,0] = 0.245718212181
+	distCoeffs[1,0] = -0.603892493849
+	distCoeffs[2,0] = 0.00312595426646
+	distCoeffs[3,0] = 0.0056193962696
+
+	cubeSize = 1.0
+	c1 = [0.0, 0.0, 0.0]
+	c2 = [cubeSize, 0.0, 0.0]
+	c3 = [0.0, cubeSize, 0.0]
+	c4 = [0.0, 0.0, cubeSize]
+	objectPts = numpy.array([c1,c2,c3,c4])
+	print objectPts
+	objectPts = cv.fromarray(objectPts)
+
+	im1 = [37.0,70.0]
+	im2 = [0.0,69.0]
+	im3 = [38.0,5.0]
+	im4 = [84.0,71.0]
+	imgPoints = numpy.array([im1,im2,im3,im4])
+	print imgPoints
+	imgPoints = cv.fromarray(imgPoints)
+
+	rvec = cv.CreateMat(3,1,cv.CV_32FC1)
+	tvec = cv.CreateMat(3,1,cv.CV_32FC1)
+
+	cv.FindExtrinsicCameraParams2(objectPts, imgPoints, cameraMatrix, distCoeffs, rvec, tvec)
+	print "rvec"
+	print rvec[0,0]
+	print rvec[1,0]
+	print rvec[2,0]
+
+	print "tvec"
+	print tvec[0,0]
+	print tvec[1,0]
+	print tvec[2,0]
+
+	rotMat = eulerAngles2RotMat(rvec)
+	poseMat = combinePoseMats(rotMat,tvec)
+
+	point = cv.CreateMat(4,1,cv.CV_32FC1)
+	pointCSpace = cv.CreateMat(3,1,cv.CV_32FC1)
+	uv1 = cv.CreateMat(3,1,cv.CV_32FC1)
+	for c in (c1,c2,c3,c4):
+		point[0,0] = c[0]
+		point[1,0] = c[1]
+		point[2,0] = c[2]
+		point[3,0] = 1.0
+		print c
+		cv.GEMM(poseMat, point, 1.0, None, 0.0, pointCSpace)
+		cv.GEMM(cameraMatrix, pointCSpace, 1.0, None, 0.0, uv1)
+
+		print int(uv1[0,0]),int(uv1[1,0])
+		cv.Circle(img, (int(uv1[0,0]),int(uv1[1,0])), 3, (255,0,0))
+
+	cv.ShowImage("Corners",img)
+	cv.WaitKey()
 
 
+def combinePoseMats(rotMat,tvec):
+	poseMat = cv.CreateMat(3,4,cv.CV_32FC1)
+	poseMat[0,0] = rotMat[0,0]; poseMat[0,1] = rotMat[0,1]; poseMat[0,2] = rotMat[0,2]
+	poseMat[1,0] = rotMat[1,0]; poseMat[1,1] = rotMat[1,1]; poseMat[1,2] = rotMat[1,2]
+	poseMat[2,0] = rotMat[2,0]; poseMat[2,1] = rotMat[2,1]; poseMat[2,2] = rotMat[2,2]
+
+	poseMat[0,3] = tvec[0,0]
+	poseMat[1,3] = tvec[1,0]
+	poseMat[2,3] = tvec[2,0]
+
+	return poseMat
+
+def eulerAngles2RotMat(rvec):
+	# http://en.wikipedia.org/wiki/Euler_angles#Matrix_orientation
+	# rvec is a 3x1 cvMat
+	s = [0, 0, 0]
+	s[0] = math.sin(rvec[0,0])
+	s[1] = math.sin(rvec[1,0])
+	s[2] = math.sin(rvec[2,0])
+	c = [0, 0, 0]
+	c[0] = math.cos(rvec[0,0])
+	c[1] = math.cos(rvec[1,0])
+	c[2] = math.cos(rvec[2,0])
+
+	rotMat = cv.CreateMat(3,3,cv.CV_32FC1)
+	rotMat[0,0] = c[1]*c[2]
+	rotMat[0,1] = -c[1]*s[2]
+	rotMat[0,2] = s[1]
+	rotMat[1,0] = c[0]*s[2] + c[2]*s[0]*s[1]
+	rotMat[1,1] = c[0]*s[2] - s[0]*s[1]*s[2]
+	rotMat[1,2] = -c[1]*s[0]
+	rotMat[2,0] = s[0]*s[2] - c[0]*c[2]*s[1]
+	rotMat[2,1] = c[2]*s[0] - c[0]*s[1]*s[2]
+	rotMat[2,2] = c[0]*c[1]
+
+	return rotMat
 
 def rotMat2EulerAngles(rotationMatrix):
+	# rotationMatrix is a 3x3 cvMat
 	# http://en.wikipedia.org/wiki/Rotation_matrix#Determining_the_angle
 	phi	= math.atan2(rotationMatrix[2,0],rotationMatrix[2,1])
 	theta = math.acos(rotationMatrix[2,2])
@@ -481,7 +571,7 @@ def rotMat2EulerAngles(rotationMatrix):
 if __name__ == '__main__':
 	try:
 		cameraCalibration()
-		#demoObjPose()
+		#demoFindObjPose()
 		#demoPlanerPoseEstimation()
 		#demoSquareCorners()
 		#inliers = getInliers()
@@ -491,5 +581,3 @@ if __name__ == '__main__':
 	except rospy.ROSInterruptException: 
 		pass
 
-
-	
