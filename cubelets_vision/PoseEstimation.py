@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-#import roslib; roslib.load_manifest('cubelets_vision')
-import roslib; roslib.load_manifest('beginner_tutorials')
+import roslib; roslib.load_manifest('cubelets_vision')
 import sys
 import rospy
 import cv,cv2
@@ -9,7 +8,7 @@ import math
 from scipy.spatial import KDTree
 from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
-from cubeletsSURF2 import *
+from CubeletsSURF import *
 
 def cameraCalibration():
 	# For use with a checkerboard pattern, like the one at
@@ -570,14 +569,48 @@ def rotMat2EulerAngles(rotationMatrix):
 
 if __name__ == '__main__':
 	try:
-		cameraCalibration()
+		#cameraCalibration()
 		#demoFindObjPose()
 		#demoPlanerPoseEstimation()
 		#demoSquareCorners()
-		#inliers = getInliers()
-		#for i in range(0,len(inliers)):
-		#	print inliers[i][0]
-		#	inlierList = keyPts2CoordMat(inliers[i][1])
+		c1 = numpy.array([0,0,1])
+		c2 = numpy.array([0,217,1])
+		c3 = numpy.array([217,0,1])
+		c4 = numpy.array([217,217,1])
+		cornerCoords = numpy.array([c1,c2,c3,c4])
+		testImage = cv.LoadImage(CUBE_ARRAY,cv.CV_LOAD_IMAGE_COLOR)
+
+		inliers = getInliers()
+
+		for i in range(0,len(inliers)):
+			print "Top Left Corner:"
+			print inliers[i][0]
+			pairs = inliers[i][1]
+
+			sourcePts = cv.CreateMat(2,len(pairs),cv.CV_32FC1)
+			targetPts = cv.CreateMat(2,len(pairs),cv.CV_32FC1)
+			for j in range(0,len(pairs)):
+				sourceKeyPoint = pairs[j][1]
+				targetKeyPoint = pairs[j][0]
+
+				sourcePts[0,j] = sourceKeyPoint[0][0]
+				sourcePts[1,j] = sourceKeyPoint[0][1]
+				targetPts[0,j] = targetKeyPoint[0][0]
+				targetPts[1,j] = targetKeyPoint[0][1]
+
+			transformedCoords, homography = getSquareCorners(cornerCoords,sourcePts,targetPts)
+			sourcePts = None
+			targetPts = None
+			print "Corner Coordinates"
+			for j in range(0,len(transformedCoords)):
+				xy = (transformedCoords[j][0],transformedCoords[j][1])
+				print xy
+				cv.Circle(testImage, xy, INLIER_SIZE, (255,255,0), -1)
+
+		cv.ShowImage("Corners",testImage)
+		cv.WaitKey()
 	except rospy.ROSInterruptException: 
 		pass
 
+
+	
