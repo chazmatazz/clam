@@ -1,8 +1,8 @@
 """ Library for Cubelet SURF """
 
-import roslib; roslib.load_manifest('cubelets_vision')
+#import roslib; roslib.load_manifest('cubelets_vision')
 import sys
-import rospy
+#import rospy
 import cv,cv2
 import numpy
 import math
