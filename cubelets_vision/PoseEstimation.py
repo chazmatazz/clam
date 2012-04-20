@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import roslib; roslib.load_manifest('cubelets_vision')
+#import roslib; roslib.load_manifest('cubelets_vision')
+import roslib; roslib.load_manifest('beginner_tutorials')
 import sys
 import rospy
 import cv,cv2
@@ -9,6 +10,8 @@ from scipy.spatial import KDTree
 from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
 from CubeletsSURF import *
+
+FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
 def cameraCalibration():
 	# For use with a checkerboard pattern, like the one at
@@ -205,13 +208,11 @@ def findHomography(sourcePts,targetPts):
     return homography
 
 def getSquareCorners(cornerCoords,sourcePts,targetPts):
-    # source, target should be 2x4+ CV_32FC1 matrices,
-	# specifying the  corresponding2D coordinates of the points in the template and target image
-	# sideLength is the length in pixels of the square's template image
+    # source, target should be 2x4+ CV_32FC1 matrices, specifying the 
+	# corresponding2D coordinates of the points in the template and target image
 	homography = findHomography(sourcePts,targetPts)
 
 	# Transform points (default of corners) in example image into perspective of target image
-
 	transformedCoords = numpy.zeros((4,2),dtype=numpy.int32)
 
 	for i in range(0,4):
@@ -277,77 +278,235 @@ def demoSquareCorners():
 	print rotationMatrix[1,0],rotationMatrix[1,1],rotationMatrix[1,2]
 	print rotationMatrix[2,0],rotationMatrix[2,1],rotationMatrix[2,2]
 
+	return
 
-def demoPlanerPoseEstimation():
-	templatePath = "images/redCubeFront.png"
-	targetPath = "images/redCubeTurned.png"
+def demoCubeSideCorners():
+	# Test Images
+	templatePath = BLACK_CUBE
+	targetPath = "images/rotatedCube.png"
+
 	templateImg = cv.LoadImageM(templatePath, cv.CV_LOAD_IMAGE_COLOR)
 	targetImg = cv.LoadImageM(targetPath, cv.CV_LOAD_IMAGE_COLOR)
 
 	# Four of the internal points on the test images
 	templatePts = cv.CreateMat(2,4,cv.CV_32FC1)
 	targetPts = cv.CreateMat(2,4,cv.CV_32FC1)
+
+	templatePts[0,0] = 85.0
+	templatePts[1,0] = 48.0
+
+	templatePts[0,1] = 167.0
+	templatePts[1,1] = 81.0
+
+	templatePts[0,2] = 132.0
+	templatePts[1,2] = 165.0
+
+	templatePts[0,3] = 49.0
+	templatePts[1,3] = 130.0
 #
-	templatePts[0,0] = 28.0
-	templatePts[1,0] = 16.0
+	targetPts[0,0] = 432.0
+	targetPts[1,0] = 192.0
 
-	templatePts[0,1] = 54.0
-	templatePts[1,1] = 26.0
+	targetPts[0,1] = 409.0
+	targetPts[1,1] = 155.0
 
-	templatePts[0,2] = 43.0
-	templatePts[1,2] = 51.0
+	targetPts[0,2] = 455.0
+	targetPts[1,2] = 137.0
 
-	templatePts[0,3] = 18.0
-	templatePts[1,3] = 41.0
-#
-	targetPts[0,0] = 62.0
-	targetPts[1,0] = 22.0
+	targetPts[0,3] = 480.0
+	targetPts[1,3] = 175.0
 
-	targetPts[0,1] = 80.0
-	targetPts[1,1] = 33.0
-
-	targetPts[0,2] = 73.0
-	targetPts[1,2] = 56.0
-
-	targetPts[0,3] = 55.0
-	targetPts[1,3] = 45.0
-#
+	# Coordinates of the Cube Corners in the template image
 	c1 = numpy.array([0,0,1])
-	c2 = numpy.array([0,templateImg.width,1])
-	c3 = numpy.array([templateImg.width,0,1])
-	c4 = numpy.array([templateImg.width,templateImg.width,1])
+	c2 = numpy.array([218,0,1])
+	c3 = numpy.array([0,218,1])
+	c4 = numpy.array([218,218,1])
 	cornerCoords = numpy.array([c1,c2,c3,c4])
+
+	# Find the Corners relating to the target points in the template image
 	corners, homography = getSquareCorners(cornerCoords,templatePts,targetPts)
 
-	rotationMatrix, translationVector = findPlanarPose(homography)
+	# Mark The Corresponding Internal Points for Calculating Homography
+	for i in range(0,4):
+		templateCoord = (int(templatePts[0,i]),int(templatePts[1,i]))
+		cv.Circle(templateImg, templateCoord, 2, (0,0,255),-1)
+		cv.PutText(templateImg, str(i), templateCoord, FONT, (0,255,255))
 
-	print "Rotation Matrix:"
-	print rotationMatrix[0,0],rotationMatrix[0,1],rotationMatrix[0,2]
-	print rotationMatrix[1,0],rotationMatrix[1,1],rotationMatrix[1,2]
-	print rotationMatrix[2,0],rotationMatrix[2,1],rotationMatrix[2,2]
+		targetCoord = (int(targetPts[0,i]),int(targetPts[1,i]))
+		cv.Circle(targetImg, targetCoord, 2, (0,0,255),-1)
+		cv.PutText(targetImg, str(i), targetCoord, FONT, (0,255,255))
 
-	print "Translation Vector"
-	print translationVector[0,0]
-	print translationVector[1,0]
-	print translationVector[2,0]
+	# View the Images
+	for i in range(0,4):
+		cv.Circle(targetImg, (corners[i,0],corners[i,1]), 10, (255,0,0))
 
-	eulerAngles = rotMat2EulerAngles(rotationMatrix)
-	print "Euler Angles (radians):"
-	print eulerAngles
+	cv.ShowImage("Template Image", templateImg)
+	cv.MoveWindow("Template Image", 60, 0)
+	cv.ShowImage("Target Image with Corners marked", targetImg)
+	cv.MoveWindow("Target Image with Corners marked", 640+60, 0)
+	cv.WaitKey()
 
-	poseMatrix = cv.CreateMat(3,4,cv.CV_32FC1)
-	poseMatrix[:,0:2] = rotationMatrix
-#	poseMatrix[:,3] = translationVector
-
-	print "Pose Matrix"
-	print poseMatrix[0,0],poseMatrix[0,1],poseMatrix[0,2],poseMatrix[0,3]
-	print poseMatrix[1,0],poseMatrix[1,1],poseMatrix[1,2],poseMatrix[1,3]
-	print poseMatrix[2,0],poseMatrix[2,1],poseMatrix[2,2],poseMatrix[2,3]
-
+	# Close Windows from previous demos
+	#cv.DestroyAllWindows()
+	return
 
 
+def findObjPose(objPts,imgPts,focal_length):
+	# objPts: List of 32f triplets, coordinates of points on object in object space
+	# imgPts: List of 32f pairs, object points projections on the 2D image plane
+	positObject = cv.CreatePOSITObject(objPts)
+
+	rvecs, tvecs = cv.POSIT(positObject,imgPts,focal_length,(cv.CV_TERMCRIT_ITER, 10, 0))
+	#print "rvecs: ",rvecs
+	#print "tvecs: ",tvecs
+
+	# rvecs and tvecs are not returned as cv matrices, 
+	# need to convert to matrix format
+	poseMat = cv.CreateMat(3,4,cv.CV_32FC1)
+	for r in range(0,3):
+		for c in range(0,3):
+			poseMat[r,c] = rvecs[r][c]
+	
+	for r in range(0,3):
+		poseMat[r,3] = tvecs[r]
+
+	# Memory Management
+	#cv.ReleasePositObject(positObject)
+	# Function missing in python bindings
+
+	return poseMat
+
+def projectPoints(objModelPoints,cameraMatrix,poseMat):
+	# objModelPoints is a list of coordinates in the object space
+	imageCoords = []
+	homogenousCoords = cv.CreateMat(4,1,cv.CV_32FC1)
+	cameraCoords = cv.CreateMat(3,1,cv.CV_32FC1)
+
+	for i in range(0,len(objModelPoints)):
+		for j in range(0,3):
+			homogenousCoords[j,0] = objModelPoints[i][j]
+		homogenousCoords[3,0] = 1
+
+		cv.GEMM(poseMat, homogenousCoords, 1.0, None, 0.0, cameraCoords)
+
+		#print "cameraCoords: ", cameraCoords[0,0], cameraCoords[1,0], cameraCoords[2,0]
+		x = cameraMatrix[0,0]*(cameraCoords[0,0]/cameraCoords[2,0])
+		y = cameraMatrix[1,1]*(cameraCoords[1,0]/cameraCoords[2,0])
+		imageCoords.append((int(x),int(y)))
+
+	# return list of coordinates projected into camera image plane
+	return imageCoords
+
+def positDemo():
+	imgPath = 'images/cornerCube.png'
+	img = cv.LoadImageM(imgPath, cv.CV_LOAD_IMAGE_COLOR)
+
+	cameraMatrix = cv.CreateMat(3,3,cv.CV_32FC1)
+	cv.SetZero(cameraMatrix)
+	cameraMatrix[0,0] = 560.0
+	cameraMatrix[0,2] = 300.0
+	cameraMatrix[1,1] = 560.0
+	cameraMatrix[1,2] = 230.0
+	cameraMatrix[2,2] = 1.0
+
+	focal_length = 560.0
+	
+	objPts = cv.CreateMat(4,3,cv.CV_32FC1)
+	cv.SetZero(objPts)
+	objPts = [(0,0,0),(1,0,0),(0,1,0),(0,0,1)]	# Points used for pose estimation
+	xtrPts = [(1,1,0),(1,0,1),(0,1,1),(1,1,1)]	# Other points on the cube, for display
+
+	imgPts = cv.CreateMat(4,2,cv.CV_32FC1)
+	cv.SetZero(imgPts)
+	imgPts = [(437,228),(338,236),(470,106),(518,280)]
+	poseMat = findObjPose(objPts,imgPts,focal_length)
+
+	# Verify Estimation
+	for i in range(0,4):
+		objPts.append(xtrPts[i])
+	imageCoords = projectPoints(objPts,cameraMatrix,poseMat)
+	print "Projections of Object Points:"
+	print objPts
+
+	# Mark Cube Corners
+	cv.Circle(img, imageCoords[0], 10, (255,255,0))	# Reference Point
+	cv.Circle(img, imageCoords[1], 10, (0,0,255))	# +x
+	cv.Circle(img, imageCoords[2], 10, (0,255,0))	# +y
+	cv.Circle(img, imageCoords[3], 10, (255,0,0))	# +z
+	cv.Circle(img, imageCoords[4], 10, (0,255,255))
+	cv.Circle(img, imageCoords[5], 10, (0,255,255))
+	cv.Circle(img, imageCoords[6], 10, (0,255,255))
+#	cv.Circle(img, imageXY[7], 10, (0,255,255))
+
+	cv.Line(img, imageCoords[0], imageCoords[1], (255,255,255))
+	cv.Line(img, imageCoords[0], imageCoords[2], (255,255,255))
+	cv.Line(img, imageCoords[0], imageCoords[3], (255,255,255))
+	cv.Line(img, imageCoords[4], imageCoords[1], (255,255,255))
+	cv.Line(img, imageCoords[4], imageCoords[2], (255,255,255))
+	cv.Line(img, imageCoords[5], imageCoords[1], (255,255,255))
+	cv.Line(img, imageCoords[5], imageCoords[3], (255,255,255))
+	cv.Line(img, imageCoords[6], imageCoords[2], (255,255,255))
+	cv.Line(img, imageCoords[6], imageCoords[3], (255,255,255))
+
+	# Mark Original Points for Pose Calculation
+	for i in range(0,4):
+		cv.Circle(img, imgPts[i], 2, (255,0,255),-1)
+		
+	cv.ShowImage("Corners",img)
+	cv.MoveWindow("Corners", 60, 0)
+	cv.WaitKey()
+
+	return
+
+def combinePoseMats(rotMat,tvec):
+	# Assumes rotMat and tvec are cvMatrices
+	poseMat = cv.CreateMat(3,4,cv.CV_32FC1)
+	poseMat[0,0] = rotMat[0,0]; poseMat[0,1] = rotMat[0,1]; poseMat[0,2] = rotMat[0,2]
+	poseMat[1,0] = rotMat[1,0]; poseMat[1,1] = rotMat[1,1]; poseMat[1,2] = rotMat[1,2]
+	poseMat[2,0] = rotMat[2,0]; poseMat[2,1] = rotMat[2,1]; poseMat[2,2] = rotMat[2,2]
+
+	poseMat[0,3] = tvec[0,0]
+	poseMat[1,3] = tvec[1,0]
+	poseMat[2,3] = tvec[2,0]
+
+	return poseMat
+
+def eulerAngles2RotMat(rvec):
+	# http://en.wikipedia.org/wiki/Euler_angles#Matrix_orientation
+	# rvec is a 3x1 cvMat
+	s = [0, 0, 0]
+	s[0] = math.sin(rvec[0,0])
+	s[1] = math.sin(rvec[1,0])
+	s[2] = math.sin(rvec[2,0])
+	c = [0, 0, 0]
+	c[0] = math.cos(rvec[0,0])
+	c[1] = math.cos(rvec[1,0])
+	c[2] = math.cos(rvec[2,0])
+
+	rotMat = cv.CreateMat(3,3,cv.CV_32FC1)
+	rotMat[0,0] = c[1]*c[2]
+	rotMat[0,1] = -c[1]*s[2]
+	rotMat[0,2] = s[1]
+	rotMat[1,0] = c[0]*s[2] + c[2]*s[0]*s[1]
+	rotMat[1,1] = c[0]*s[2] - s[0]*s[1]*s[2]
+	rotMat[1,2] = -c[1]*s[0]
+	rotMat[2,0] = s[0]*s[2] - c[0]*c[2]*s[1]
+	rotMat[2,1] = c[2]*s[0] - c[0]*s[1]*s[2]
+	rotMat[2,2] = c[0]*c[1]
+
+	return rotMat
+
+def rotMat2EulerAngles(rotationMatrix):
+	# rotationMatrix is a 3x3 cvMat
+	# http://en.wikipedia.org/wiki/Rotation_matrix#Determining_the_angle
+	phi	= math.atan2(rotationMatrix[2,0],rotationMatrix[2,1])
+	theta = math.acos(rotationMatrix[2,2])
+	psi = - math.atan2(rotationMatrix[0,2],rotationMatrix[1,2])
+
+	return (phi,theta,psi)
 
 def findPlanarPose(homography,cameraMatrix='default'):
+	# Doesnt seem to work properly
 	# http://urbanar.blogspot.com/2011/04/from-homography-to-opengl-modelview.html
 	# Estimates rotation matrix for a plane based on its homography transform
 	# and the intrinsic camera matrix
@@ -437,178 +596,99 @@ def findPlanarPose(homography,cameraMatrix='default'):
 
 	return rotationMatrix, translationVector
 
-def findObjPose(objPts,imgPts,focal_length):
-	# objPts: CvPoint3D32fs, coordinates of points on object in object space
-	# imgPts: CvPoint2D32f, object points projections on the 2D image plane
-	positObject = cv.CreatePOSITObject(objPts)
-	rvecs = cv.CreateMat(1,3,cv.CV_32FC1)
-	tvecs = cv.CreateMat(1,3,cv.CV_32FC1)
+def demoPlanerPoseEstimation():
+	# This does not work well.
+	templatePath = "images/redCubeFront.png"
+	targetPath = "images/redCubeTurned.png"
+	templateImg = cv.LoadImageM(templatePath, cv.CV_LOAD_IMAGE_COLOR)
+	targetImg = cv.LoadImageM(targetPath, cv.CV_LOAD_IMAGE_COLOR)
 
-	rvecs, tvecs = cv.POSIT(positObject,imgPts,focal_length,(cv.CV_TERMCRIT_ITER, 10, 0))
+	# Four of the internal points on the test images
+	templatePts = cv.CreateMat(2,4,cv.CV_32FC1)
+	targetPts = cv.CreateMat(2,4,cv.CV_32FC1)
+#
+	templatePts[0,0] = 28.0
+	templatePts[1,0] = 16.0
 
-	# Memory Management
-	cv.ReleasePOSITObject(positObject)
+	templatePts[0,1] = 54.0
+	templatePts[1,1] = 26.0
 
-	return rvecs,tvecs
+	templatePts[0,2] = 43.0
+	templatePts[1,2] = 51.0
 
-def demoFindObjPose():
-	img = cv.LoadImageM("images/redCubeTurned.png", cv.CV_LOAD_IMAGE_COLOR)
+	templatePts[0,3] = 18.0
+	templatePts[1,3] = 41.0
+#
+	targetPts[0,0] = 62.0
+	targetPts[1,0] = 22.0
 
-	cameraMatrix = cv.CreateMat(3,3,cv.CV_32FC1)
-	cv.SetZero(cameraMatrix)
-	cameraMatrix[0,0] = 560.0
-	cameraMatrix[0,2] = 300.0
-	cameraMatrix[1,1] = 560.0
-	cameraMatrix[1,2] = 230.0
-	cameraMatrix[2,2] = 1.0
+	targetPts[0,1] = 80.0
+	targetPts[1,1] = 33.0
 
-	distCoeffs = cv.CreateMat(4,1,cv.CV_32FC1)
-	distCoeffs[0,0] = 0.245718212181
-	distCoeffs[1,0] = -0.603892493849
-	distCoeffs[2,0] = 0.00312595426646
-	distCoeffs[3,0] = 0.0056193962696
+	targetPts[0,2] = 73.0
+	targetPts[1,2] = 56.0
 
-	cubeSize = 1.0
-	c1 = [0.0, 0.0, 0.0]
-	c2 = [cubeSize, 0.0, 0.0]
-	c3 = [0.0, cubeSize, 0.0]
-	c4 = [0.0, 0.0, cubeSize]
-	objectPts = numpy.array([c1,c2,c3,c4])
-	print objectPts
-	objectPts = cv.fromarray(objectPts)
+	targetPts[0,3] = 55.0
+	targetPts[1,3] = 45.0
+#
+	c1 = numpy.array([0,0,1])
+	c2 = numpy.array([0,templateImg.width,1])
+	c3 = numpy.array([templateImg.width,0,1])
+	c4 = numpy.array([templateImg.width,templateImg.width,1])
+	cornerCoords = numpy.array([c1,c2,c3,c4])
+	corners, homography = getSquareCorners(cornerCoords,templatePts,targetPts)
 
-	im1 = [37.0,70.0]
-	im2 = [0.0,69.0]
-	im3 = [38.0,5.0]
-	im4 = [84.0,71.0]
-	imgPoints = numpy.array([im1,im2,im3,im4])
-	print imgPoints
-	imgPoints = cv.fromarray(imgPoints)
+	rotationMatrix, translationVector = findPlanarPose(homography)
 
-	rvec = cv.CreateMat(3,1,cv.CV_32FC1)
-	tvec = cv.CreateMat(3,1,cv.CV_32FC1)
+	print "Rotation Matrix:"
+	print rotationMatrix[0,0],rotationMatrix[0,1],rotationMatrix[0,2]
+	print rotationMatrix[1,0],rotationMatrix[1,1],rotationMatrix[1,2]
+	print rotationMatrix[2,0],rotationMatrix[2,1],rotationMatrix[2,2]
 
-	cv.FindExtrinsicCameraParams2(objectPts, imgPoints, cameraMatrix, distCoeffs, rvec, tvec)
-	print "rvec"
-	print rvec[0,0]
-	print rvec[1,0]
-	print rvec[2,0]
+	print "Translation Vector"
+	print translationVector[0,0]
+	print translationVector[1,0]
+	print translationVector[2,0]
 
-	print "tvec"
-	print tvec[0,0]
-	print tvec[1,0]
-	print tvec[2,0]
+	eulerAngles = rotMat2EulerAngles(rotationMatrix)
+	print "Euler Angles (radians):"
+	print eulerAngles
 
-	rotMat = eulerAngles2RotMat(rvec)
-	poseMat = combinePoseMats(rotMat,tvec)
+	poseMatrix = cv.CreateMat(3,4,cv.CV_32FC1)
+	poseMatrix[:,0:2] = rotationMatrix
+#	poseMatrix[:,3] = translationVector
 
-	point = cv.CreateMat(4,1,cv.CV_32FC1)
-	pointCSpace = cv.CreateMat(3,1,cv.CV_32FC1)
-	uv1 = cv.CreateMat(3,1,cv.CV_32FC1)
-	for c in (c1,c2,c3,c4):
-		point[0,0] = c[0]
-		point[1,0] = c[1]
-		point[2,0] = c[2]
-		point[3,0] = 1.0
-		print c
-		cv.GEMM(poseMat, point, 1.0, None, 0.0, pointCSpace)
-		cv.GEMM(cameraMatrix, pointCSpace, 1.0, None, 0.0, uv1)
+	print "Pose Matrix"
+	print poseMatrix[0,0],poseMatrix[0,1],poseMatrix[0,2],poseMatrix[0,3]
+	print poseMatrix[1,0],poseMatrix[1,1],poseMatrix[1,2],poseMatrix[1,3]
+	print poseMatrix[2,0],poseMatrix[2,1],poseMatrix[2,2],poseMatrix[2,3]
 
-		print int(uv1[0,0]),int(uv1[1,0])
-		cv.Circle(img, (int(uv1[0,0]),int(uv1[1,0])), 3, (255,0,0))
-
-	cv.ShowImage("Corners",img)
-	cv.WaitKey()
-
-
-def combinePoseMats(rotMat,tvec):
-	poseMat = cv.CreateMat(3,4,cv.CV_32FC1)
-	poseMat[0,0] = rotMat[0,0]; poseMat[0,1] = rotMat[0,1]; poseMat[0,2] = rotMat[0,2]
-	poseMat[1,0] = rotMat[1,0]; poseMat[1,1] = rotMat[1,1]; poseMat[1,2] = rotMat[1,2]
-	poseMat[2,0] = rotMat[2,0]; poseMat[2,1] = rotMat[2,1]; poseMat[2,2] = rotMat[2,2]
-
-	poseMat[0,3] = tvec[0,0]
-	poseMat[1,3] = tvec[1,0]
-	poseMat[2,3] = tvec[2,0]
-
-	return poseMat
-
-def eulerAngles2RotMat(rvec):
-	# http://en.wikipedia.org/wiki/Euler_angles#Matrix_orientation
-	# rvec is a 3x1 cvMat
-	s = [0, 0, 0]
-	s[0] = math.sin(rvec[0,0])
-	s[1] = math.sin(rvec[1,0])
-	s[2] = math.sin(rvec[2,0])
-	c = [0, 0, 0]
-	c[0] = math.cos(rvec[0,0])
-	c[1] = math.cos(rvec[1,0])
-	c[2] = math.cos(rvec[2,0])
-
-	rotMat = cv.CreateMat(3,3,cv.CV_32FC1)
-	rotMat[0,0] = c[1]*c[2]
-	rotMat[0,1] = -c[1]*s[2]
-	rotMat[0,2] = s[1]
-	rotMat[1,0] = c[0]*s[2] + c[2]*s[0]*s[1]
-	rotMat[1,1] = c[0]*s[2] - s[0]*s[1]*s[2]
-	rotMat[1,2] = -c[1]*s[0]
-	rotMat[2,0] = s[0]*s[2] - c[0]*c[2]*s[1]
-	rotMat[2,1] = c[2]*s[0] - c[0]*s[1]*s[2]
-	rotMat[2,2] = c[0]*c[1]
-
-	return rotMat
-
-def rotMat2EulerAngles(rotationMatrix):
-	# rotationMatrix is a 3x3 cvMat
-	# http://en.wikipedia.org/wiki/Rotation_matrix#Determining_the_angle
-	phi	= math.atan2(rotationMatrix[2,0],rotationMatrix[2,1])
-	theta = math.acos(rotationMatrix[2,2])
-	psi = - math.atan2(rotationMatrix[0,2],rotationMatrix[1,2])
-
-	return (phi,theta,psi)
+	return
 
 if __name__ == '__main__':
 	try:
-		#cameraCalibration()
-		#demoFindObjPose()
-		#demoPlanerPoseEstimation()
-		#demoSquareCorners()
-		c1 = numpy.array([0,0,1])
-		c2 = numpy.array([0,217,1])
-		c3 = numpy.array([217,0,1])
-		c4 = numpy.array([217,217,1])
-		cornerCoords = numpy.array([c1,c2,c3,c4])
-		testImage = cv.LoadImage(CUBE_ARRAY,cv.CV_LOAD_IMAGE_COLOR)
+		active = True
+		while active:
+			print "Select from the following demos:"
+			print "c: Premade Camera Calibration Demo"
+			print "d: Cube Corner Homography Demo"
+			print "p: Posit Demo"
+			print "q: Quit"
 
-		inliers = getInliers()
+			c = raw_input()
 
-		for i in range(0,len(inliers)):
-			print "Top Left Corner:"
-			print inliers[i][0]
-			pairs = inliers[i][1]
+			if c.strip() == 'c':
+				cameraCalibration()
+			elif c.strip() == 'd':
+				demoCubeSideCorners()
+				#demoSquareCorners()
+			elif c.strip() == 'p':
+				positDemo()
+			elif c.strip() == 'q':
+				active = False
+			else:
+				print "No valid option selected."
 
-			sourcePts = cv.CreateMat(2,len(pairs),cv.CV_32FC1)
-			targetPts = cv.CreateMat(2,len(pairs),cv.CV_32FC1)
-			for j in range(0,len(pairs)):
-				sourceKeyPoint = pairs[j][1]
-				targetKeyPoint = pairs[j][0]
-
-				sourcePts[0,j] = sourceKeyPoint[0][0]
-				sourcePts[1,j] = sourceKeyPoint[0][1]
-				targetPts[0,j] = targetKeyPoint[0][0]
-				targetPts[1,j] = targetKeyPoint[0][1]
-
-			transformedCoords, homography = getSquareCorners(cornerCoords,sourcePts,targetPts)
-			sourcePts = None
-			targetPts = None
-			print "Corner Coordinates"
-			for j in range(0,len(transformedCoords)):
-				xy = (transformedCoords[j][0],transformedCoords[j][1])
-				print xy
-				cv.Circle(testImage, xy, INLIER_SIZE, (255,255,0), -1)
-
-		cv.ShowImage("Corners",testImage)
-		cv.WaitKey()
 	except rospy.ROSInterruptException: 
 		pass
 
