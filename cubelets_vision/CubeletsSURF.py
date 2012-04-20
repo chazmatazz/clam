@@ -10,7 +10,9 @@ from scipy.spatial import KDTree
 #from std_msgs.msg import String
 #from cv_bridge import CvBridge, CvBridgeError
 
-BLACK_CUBE = "images/black_cube_quarter.png"
+BLACK_CUBE = "images/black_cube.png"
+CUBE_ORIGIN = (0,0)
+CUBE_DIM = (219,219)
 CUBE_ARRAY = "images/synthetic.png"#"images/cubeArray.png"
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
@@ -28,6 +30,45 @@ def loadImage(path, type=cv.CV_LOAD_IMAGE_GRAYSCALE):
     """ load an image """
     return cv.LoadImageM(path, type)
 
+def filterFeatures(features, origin, dim):
+    (min_x,min_y) = origin
+    (width, height) = dim
+    (max_x, max_y) = (min_x+width, min_y+height)
+    (keypoints, descriptors) = features
+    filtered_keypoints = []
+    filtered_descriptors = []
+    for i in range(len(keypoints)):
+        ((x,y), laplacian, size, direction, hessian) = keypoints[i]
+        if x >= min_x and x <= max_x and y >= min_y and y <= max_y:
+            # convert to center
+            new_keypoint = ((x-min_x, y-min_y), laplacian, size, direction, hessian)
+            filtered_keypoints += [new_keypoint]
+            filtered_descriptors += [descriptors[i]]
+    
+    return (filtered_keypoints, filtered_descriptors)
+        
+
+def grayscaleize(img):
+    imSize = cv.GetSize(img)
+    (width, height) = imSize
+    newImg = cv.CreateMat(height, width, cv.CV_8UC1)
+    cv.CvtColor(img, newImg, cv.CV_BGR2GRAY)
+    return newImg
+    
+def dereflectImage(img, min_gray=63, b_span=50, g_span=50, r_span=50, flat_gray=(255,255,255)):
+    imSize = cv.GetSize(img)
+    (width, height) = imSize
+    newImg = cv.CreateMat(height, width, cv.CV_8UC3)
+    for i in range(height):
+        for j in range(width):
+            (b,g,r) = img[i,j]
+            avg = (b+g+r)/3
+            if avg > min_gray and b > avg - b_span and b < avg + b_span and g > avg - g_span and g < avg + g_span and r > avg - r_span and r < avg + r_span:
+                newImg[i,j] = flat_gray
+            else:
+                newImg[i,j] = img[i,j]
+    return newImg
+    
 def getFeatures(img, hessThresh=1000):
     """ get features of image """
     return cv.ExtractSURF(img, None, cv.CreateMemStorage(), (0, hessThresh, 3, 1))
@@ -257,12 +298,16 @@ def showMatchedImage(testImage, matches, match_size=MATCH_SIZE):
         cv.Circle(testImage, match, match_size, randColorTriplet(), -1)
     cv.ShowImage(IMAGE_WINDOW_NAME, testImage)
 
-def matchTemplateImage(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY):
+def matchTemplateImage(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, cube_origin=CUBE_ORIGIN, cube_dim=CUBE_DIM):
     """ create a template, then match an image against it """
-    templateImage = loadImage(templateImagePath)
-    testImage = loadImage(testImagePath)
+    templateImage = grayscaleize(dereflectImage(cv.LoadImageM(templateImagePath)))
+    testImage = grayscaleize(dereflectImage(cv.LoadImageM(testImagePath)))
     
-    template = getFeatures(templateImage)
+    (x,y) = cube_origin
+    (width, height) = cube_dim
+    origin = (x+width/2, y+height/2)
+    dim = (width/2, height/2)
+    template = filterFeatures(getFeatures(templateImage), origin, dim)
     test = getFeatures(testImage)
     imSize = cv.GetSize(testImage)
     matches = findMatches(imSize, testImage, template, test)
