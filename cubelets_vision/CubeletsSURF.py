@@ -7,10 +7,10 @@ import cv,cv2
 import numpy
 import math
 from scipy.spatial import KDTree
-from std_msgs.msg import String
-from cv_bridge import CvBridge, CvBridgeError
+#from std_msgs.msg import String
+#from cv_bridge import CvBridge, CvBridgeError
 
-BLACK_CUBE = "images/black_cube.png"
+BLACK_CUBE = "images/black_cube_quarter.png"
 CUBE_ARRAY = "images/synthetic.png"#"images/cubeArray.png"
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
@@ -148,7 +148,7 @@ def zeroC1(img):
         for j in range(width):
             img[i,j] = 0
 
-def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_radius=20, vote_threshold=0.03, exclusion_radius=75):
+def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_radius=20, vote_threshold=0.03, exclusion_radius=75):
     """ match features to a template """
     # TODO annotate matches with features
     (width, height) = imSize
@@ -173,7 +173,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_r
             self.length = length
         
         def getColor(self, idx):
-            n = idx * 255 * 255 * 255 / self.length
+            n = (idx * 255 * 255 * 255) / self.length
             return ((n/(255*255))%255, (n/255)%255, n%255)
 
     def drawVote(img, color, testKeypoint, vote):
@@ -252,9 +252,9 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.1, vote_r
     showMatchedImage(voteImage, matches)
     return matches    
         
-def showMatchedImage(testImage, matches):
+def showMatchedImage(testImage, matches, match_size=MATCH_SIZE):
     for match in matches:
-        cv.Circle(testImage, match, MATCH_SIZE, randColorTriplet(), -1)
+        cv.Circle(testImage, match, match_size, randColorTriplet(), -1)
     cv.ShowImage(IMAGE_WINDOW_NAME, testImage)
 
 def matchTemplateImage(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY):
