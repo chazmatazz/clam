@@ -56,6 +56,8 @@ def grayscaleize(img):
     return newImg
     
 def dereflectImage(img, min_gray=63, b_span=50, g_span=50, r_span=50, flat_gray=(255,255,255)):
+    " detect gray and replace it with a flat color "
+    # would have been better to convert to HSV and do it that way!
     imSize = cv.GetSize(img)
     (width, height) = imSize
     newImg = cv.CreateMat(height, width, cv.CV_8UC3)
