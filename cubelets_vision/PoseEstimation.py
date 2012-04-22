@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#import roslib; roslib.load_manifest('cubelets_vision')
-import roslib; roslib.load_manifest('beginner_tutorials')
+import roslib; roslib.load_manifest('cubelets_vision')
+#import roslib; roslib.load_manifest('beginner_tutorials')
 import sys
 import rospy
 import cv,cv2
@@ -351,7 +351,7 @@ def demoCubeSideCorners():
 	return
 
 
-def findObjPose(objPts,imgPts,focal_length):
+def findObjPose(focal_length,imgPts,objPts = [(0,0,0),(1,0,0),(0,1,0),(0,0,1)]):
 	# objPts: List of 32f triplets, coordinates of points on object in object space
 	# imgPts: List of 32f pairs, object points projections on the 2D image plane
 	positObject = cv.CreatePOSITObject(objPts)
@@ -411,22 +411,24 @@ def positDemo():
 
 	focal_length = 560.0
 	
-	objPts = cv.CreateMat(4,3,cv.CV_32FC1)
-	cv.SetZero(objPts)
+#	objPts = cv.CreateMat(4,3,cv.CV_32FC1)
+#	cv.SetZero(objPts)
 	objPts = [(0,0,0),(1,0,0),(0,1,0),(0,0,1)]	# Points used for pose estimation
 	xtrPts = [(1,1,0),(1,0,1),(0,1,1),(1,1,1)]	# Other points on the cube, for display
 
 	imgPts = cv.CreateMat(4,2,cv.CV_32FC1)
 	cv.SetZero(imgPts)
 	imgPts = [(437,228),(338,236),(470,106),(518,280)]
-	poseMat = findObjPose(objPts,imgPts,focal_length)
+	poseMat = findObjPose(focal_length,imgPts,objPts)
 
 	# Verify Estimation
 	for i in range(0,4):
 		objPts.append(xtrPts[i])
 	imageCoords = projectPoints(objPts,cameraMatrix,poseMat)
-	print "Projections of Object Points:"
+	print "Object Points (in Object Space):"
 	print objPts
+	print "Projections of Object Points"
+	print imageCoords
 
 	# Mark Cube Corners
 	cv.Circle(img, imageCoords[0], 10, (255,255,0))	# Reference Point
@@ -457,6 +459,208 @@ def positDemo():
 	cv.WaitKey()
 
 	return
+
+def demoPoseEstimationChain():
+	cameraMatrix = cv.CreateMat(3,3,cv.CV_32FC1)
+	cv.SetZero(cameraMatrix)
+	cameraMatrix[0,0] = 560.0
+	cameraMatrix[0,2] = 300.0
+	cameraMatrix[1,1] = 560.0
+	cameraMatrix[1,2] = 230.0
+	cameraMatrix[2,2] = 1.0
+
+	# Test Images
+	templatePath = BLACK_CUBE
+	targetPath = "images/rotatedCube.png"
+
+	templateImg = cv.LoadImageM(templatePath, cv.CV_LOAD_IMAGE_COLOR)
+	targetImg = cv.LoadImageM(targetPath, cv.CV_LOAD_IMAGE_COLOR)
+
+	# Four of the internal points on the test images
+	templatePts = cv.CreateMat(2,4,cv.CV_32FC1)
+	targetPts1 = cv.CreateMat(2,4,cv.CV_32FC1)
+	targetPts2 = cv.CreateMat(2,4,cv.CV_32FC1)
+
+	templatePts[0,0] = 85.0;	templatePts[1,0] = 48.0
+	templatePts[0,1] = 167.0;	templatePts[1,1] = 81.0
+	templatePts[0,2] = 132.0;	templatePts[1,2] = 165.0
+	templatePts[0,3] = 49.0;	templatePts[1,3] = 130.0
+#
+	targetPts1[0,0] = 432.0;	targetPts1[1,0] = 192.0
+	targetPts1[0,1] = 409.0;	targetPts1[1,1] = 155.0
+	targetPts1[0,2] = 455.0;	targetPts1[1,2] = 137.0
+	targetPts1[0,3] = 480.0;	targetPts1[1,3] = 175.0
+#
+	targetPts2[0,0] = 367.0;	targetPts2[1,0] = 231.0
+	targetPts2[0,1] = 382.0;	targetPts2[1,1] = 218.0
+	targetPts2[0,2] = 415.0;	targetPts2[1,2] = 257.0
+	targetPts2[0,3] = 397.0;	targetPts2[1,3] = 265.0
+
+	# Have lists of template/target points, corresponding to a cube side
+	templateSidePoints = []
+	templateSidePoints.append(templatePts)
+	templateSidePoints.append(templatePts)
+
+	targetSidePoints = []
+	targetSidePoints.append(targetPts1)
+	targetSidePoints.append(targetPts2)
+
+	# Coordinates of the Cube Corners in the template image
+	c1 = numpy.array([0,0,1])
+	c2 = numpy.array([218,0,1])
+	c3 = numpy.array([218,218,1])
+	c4 = numpy.array([0,218,1])
+
+	cornerCoords = numpy.array([c1,c2,c3,c4])
+
+	# Find the Corners relating to the target points in the template image
+	sideCorners = [];	sideHomography = []
+	for i in range(0,2):
+		corners, homography = getSquareCorners(cornerCoords,templateSidePoints[i],targetSidePoints[i])
+		sideCorners.append(corners)
+		sideHomography.append(homography)
+
+	# Mark The Corresponding Internal Points for Calculating Homography
+	for j in range(0,2):
+		for i in range(0,4):
+			templateCoord = (int(templateSidePoints[j][0,i]),int(templateSidePoints[j][1,i]))
+			cv.Circle(templateImg, templateCoord, 2, (0,0,255),-1)
+			cv.PutText(templateImg, str(i), templateCoord, FONT, (0,255,255))
+
+			targetCoord = (int(targetSidePoints[j][0,i]),int(targetSidePoints[j][1,i]))
+			cv.Circle(targetImg, targetCoord, 2, (0,0,255),-1)
+			cv.PutText(targetImg, str(i), targetCoord, FONT, (0,255,255))
+
+
+	# View the Images
+	for i in range(0,2):
+		for j in range(0,4):
+			coord = (sideCorners[i][j,0],sideCorners[i][j,1])
+			cv.Circle(targetImg, coord, 10, (255,0,0))
+#			cv.PutText(targetImg, str(j), coord, FONT, (0,255,255))
+
+	# Find the shared edge points
+	cornerCoords = findAxialPoints(sideCorners[0],sideCorners[1])
+	
+	# Mark Axis Corners for Pose Estimation
+	for cornerCoord in cornerCoords:
+		cv.Circle(targetImg, cornerCoord, 3, (255,255,0),-1)
+	cv.PutText(targetImg, 'x', cornerCoords[1], FONT, (0,255,255))
+	cv.PutText(targetImg, 'y', cornerCoords[2], FONT, (0,255,255))
+	cv.PutText(targetImg, 'z', cornerCoords[3], FONT, (0,255,255))
+
+
+	cv.ShowImage("Template Image", templateImg)
+	cv.MoveWindow("Template Image", 60, 0)
+	cv.ShowImage("Target Image with Corners marked", targetImg)
+	cv.MoveWindow("Target Image with Corners marked", 640+60, 0)
+	cv.WaitKey()
+
+
+	# Determine Pose from 4 corners
+	objPts = [(0,0,0),(1,0,0),(0,1,0),(0,0,1)]	# Points used for pose estimation
+	xtrPts = [(1,1,0),(1,0,1),(0,1,1),(1,1,1)]	# Other points on the cube, for display
+	poseMat = findObjPose(560,cornerCoords)
+
+	# Verify Estimation
+	img = cv.LoadImageM(targetPath, cv.CV_LOAD_IMAGE_COLOR)
+	img = markProjectedCube(img,cameraMatrix,poseMat)
+
+	# Mark Original Points for Pose Calculation
+	for i in range(0,4):
+		cv.Circle(img, cornerCoords[i], 2, (255,0,255),-1)
+		
+	cv.ShowImage("Corners",img)
+	cv.MoveWindow("Corners", 60, 0)
+	cv.WaitKey()
+
+	# Close Windows from previous demos
+	#cv.DestroyAllWindows()
+	return
+
+def markProjectedCube(img,cameraMatrix,poseMat):
+#	markedImg = cv.CreateMat(img.height,img.width,cv.CV_8UC3)
+	
+	objPts = [(0,0,0),(1,0,0),(0,1,0),(0,0,1),(1,1,0),(1,0,1),(0,1,1),(1,1,1)]
+
+	# Project Object Points to Image Plane
+	imageCoords = projectPoints(objPts,cameraMatrix,poseMat)
+
+	# Mark Cube Corners
+	cv.Circle(img, imageCoords[0], 10, (255,255,0))	# Reference Point
+	cv.Circle(img, imageCoords[1], 10, (0,0,255))	# +x
+	cv.Circle(img, imageCoords[2], 10, (0,255,0))	# +y
+	cv.Circle(img, imageCoords[3], 10, (255,0,0))	# +z
+	cv.Circle(img, imageCoords[4], 10, (0,255,255))
+	cv.Circle(img, imageCoords[5], 10, (0,255,255))
+	cv.Circle(img, imageCoords[6], 10, (0,255,255))
+
+	cv.Line(img, imageCoords[0], imageCoords[1], (255,255,255))
+	cv.Line(img, imageCoords[0], imageCoords[2], (255,255,255))
+	cv.Line(img, imageCoords[0], imageCoords[3], (255,255,255))
+	cv.Line(img, imageCoords[4], imageCoords[1], (255,255,255))
+	cv.Line(img, imageCoords[4], imageCoords[2], (255,255,255))
+	cv.Line(img, imageCoords[5], imageCoords[1], (255,255,255))
+	cv.Line(img, imageCoords[5], imageCoords[3], (255,255,255))
+	cv.Line(img, imageCoords[6], imageCoords[2], (255,255,255))
+	cv.Line(img, imageCoords[6], imageCoords[3], (255,255,255))
+
+	return img
+
+def findAxialPoints(sideCorners1,sideCorners2):
+	# Finds the 4 non-coplaner points used by POSIT given
+	# the (x,y) coordinates of the corners of 4 intersecting sides
+
+	# Determine the 2 pairs of points that are closest together
+	sDist = ()		# Smallest Distance
+	ssDist = ()		# 2nd Smallest Distance
+	sID = 0			# Id of the pair with the smallest distance
+	ssID = 0		# Id of the pair with the 2nd smallest distance
+
+	for i in range(0,4):
+		for j in range(i,4):
+			p1 = (sideCorners1[i,0],sideCorners1[i,1])
+			p2 = (sideCorners2[j,0],sideCorners2[j,1])
+			d = pixelDist(p1,p2)
+
+			if (d < sDist):
+				ssDist = sDist
+				ssID = sID
+				sDist = d
+				sID = (i,j)
+			else:
+				if (d < ssDist):
+					ssDist = d
+					ssID = (i,j)
+
+	# Determine the ordering based on the indices of the first square
+	if ((ssID[0] - sID[0])%4) == 1:
+		c1 = ((sID[0]-1)%4,sID[0],ssID[0])
+		c2 = ((sID[1]+1)%4,sID[1],ssID[1])
+	else:
+		c1 = ((ssID[0]-1)%4,ssID[0],sID[0])
+		c2 = ((ssID[1]+1)%4,ssID[1],sID[1])
+
+	cornerCoords = []
+	# '(0,0,0)' point
+	avgX = (sideCorners1[c1[1],0] + sideCorners2[c2[1],0])/2
+	avgY = (sideCorners1[c1[1],1] + sideCorners2[c2[1],1])/2
+	p = (avgX,avgY)
+	cornerCoords.append(p)
+	# 'x' Axis point
+	p = (sideCorners1[c1[0],0],sideCorners1[c1[0],1])
+	cornerCoords.append(p)
+	# 'y' Axis point
+	p = (sideCorners2[c2[0],0],sideCorners2[c2[0],1])
+	cornerCoords.append(p)
+	# 'z' Axis point
+	avgX = (sideCorners1[c1[2],0] + sideCorners2[c2[2],0])/2
+	avgY = (sideCorners1[c1[2],1] + sideCorners2[c2[2],1])/2
+	p = (avgX,avgY)
+	cornerCoords.append(p)
+
+	# Return list of (x,y) coordinates
+	return cornerCoords
 
 def combinePoseMats(rotMat,tvec):
 	# Assumes rotMat and tvec are cvMatrices
@@ -504,6 +708,13 @@ def rotMat2EulerAngles(rotationMatrix):
 	psi = - math.atan2(rotationMatrix[0,2],rotationMatrix[1,2])
 
 	return (phi,theta,psi)
+
+
+def pixelDist(p1,p2):
+	dx = p1[0] - p2[0]
+	dy = p1[1] - p2[1]
+	d = math.sqrt(dx*dx + dy*dy)
+	return d
 
 def findPlanarPose(homography,cameraMatrix='default'):
 	# Doesnt seem to work properly
@@ -671,19 +882,22 @@ if __name__ == '__main__':
 		while active:
 			print "Select from the following demos:"
 			print "c: Premade Camera Calibration Demo"
-			print "d: Cube Corner Homography Demo"
+			print "h: Cube Corner Homography Demo"
 			print "p: Posit Demo"
+			print "e: Pose Estimation Chain Demo"
 			print "q: Quit"
 
 			c = raw_input()
 
 			if c.strip() == 'c':
 				cameraCalibration()
-			elif c.strip() == 'd':
+			elif c.strip() == 'h':
 				demoCubeSideCorners()
 				#demoSquareCorners()
 			elif c.strip() == 'p':
 				positDemo()
+			elif c.strip() == 'e':
+				demoPoseEstimationChain()
 			elif c.strip() == 'q':
 				active = False
 			else:
@@ -692,5 +906,3 @@ if __name__ == '__main__':
 	except rospy.ROSInterruptException: 
 		pass
 
-
-	
