@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from CubeletsSURF import *
+import CubeletDetection
 
 print "Select from the following demos:"
 print "s: Side by Side SURF stable feature video demo"
@@ -10,11 +10,11 @@ print "m: Stable feature template matching demo"
 c = raw_input()
 
 if c.strip() == 's':
-    surfStableFeatureVideoDemo(0)
+    CubeletDetection.surfStableFeatureVideoDemo(0)
 elif c.strip() == 'o':
-    surfStableFeatureVideoDemo(1)
+    CubeletDetection.surfStableFeatureVideoDemo(1)
 elif c.strip() == 'm':
-    surfMatchVideoDemo()
+    CubeletDetection.surfMatchVideoDemo()
 else:
     "No valid option selected."
 #homographyTest()
