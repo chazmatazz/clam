@@ -1,4 +1,4 @@
 #!/usr/bin/env python
-import CubeletsSURF
+import CubeletDetection
 
-CubeletsSURF.matchTemplateImage()
+CubeletDetection.matchTemplateImage()

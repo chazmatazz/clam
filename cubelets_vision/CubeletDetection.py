@@ -1,9 +1,9 @@
-""" Library for Cubelet SURF """
+""" Library for Cubelet detection """
 
 #import roslib; roslib.load_manifest('cubelets_vision')
 import sys
 #import rospy
-import cv,cv2
+import cv, cv2
 import numpy
 import math
 from scipy.spatial import KDTree
@@ -11,8 +11,8 @@ from scipy.spatial import KDTree
 #from cv_bridge import CvBridge, CvBridgeError
 
 BLACK_CUBE = "images/black_cube.png"
-CUBE_ORIGIN = (0,0)
-CUBE_DIM = (219,219)
+CUBE_ORIGIN = (0, 0)
+CUBE_DIM = (219, 219)
 CUBE_ARRAY = "images/synthetic.png"#"images/cubeArray.png"
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
@@ -26,49 +26,62 @@ INLIER_SIZE = 10
 BRIGHTENED_IMAGE = "Brightened Image"
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
-def loadImage(path, type=cv.CV_LOAD_IMAGE_GRAYSCALE):
+def loadImage(path, typ=cv.CV_LOAD_IMAGE_GRAYSCALE):
     """ load an image """
-    return cv.LoadImageM(path, type)
+    return cv.LoadImageM(path, typ)
 
-def filterFeatures(features, origin, dim):
-    (min_x,min_y) = origin
+def filterFeaturesByBB(features, origin, dim):
+    """ Filter features based on a bounding box """
+    (min_x, min_y) = origin
     (width, height) = dim
-    (max_x, max_y) = (min_x+width, min_y+height)
+    (max_x, max_y) = (min_x + width, min_y + height)
     (keypoints, descriptors) = features
     filtered_keypoints = []
     filtered_descriptors = []
     for i in range(len(keypoints)):
-        ((x,y), laplacian, size, direction, hessian) = keypoints[i]
+        ((x, y), laplacian, size, direction, hessian) = keypoints[i]
         if x >= min_x and x <= max_x and y >= min_y and y <= max_y:
             # convert to center
-            new_keypoint = ((x-min_x, y-min_y), laplacian, size, direction, hessian)
+            new_keypoint = ((x - min_x, y - min_y), laplacian, size, direction, hessian)
             filtered_keypoints += [new_keypoint]
             filtered_descriptors += [descriptors[i]]
     
     return (filtered_keypoints, filtered_descriptors)
-        
+
+def filterForDistinctFeatures(features, radius=0.5):
+    """ filter for distinctive features """
+    (keypoints, descriptors) = features
+    kdtree = KDTree(descriptors)
+    filteredKeypoints = []
+    filteredDescriptors = []
+    for i in range(len(descriptors)):
+        if len(kdtree.query_ball_point(descriptors[i], radius)) == 1:
+            filteredKeypoints += [keypoints[i]]
+            filteredDescriptors += [descriptors[i]]
+    return (filteredKeypoints, filteredDescriptors)
 
 def grayscaleize(img):
+    """ Convert a color image to grayscale """
     imSize = cv.GetSize(img)
     (width, height) = imSize
     newImg = cv.CreateMat(height, width, cv.CV_8UC1)
     cv.CvtColor(img, newImg, cv.CV_BGR2GRAY)
     return newImg
     
-def dereflectImage(img, min_gray=63, b_span=50, g_span=50, r_span=50, flat_gray=(255,255,255)):
-    " detect gray and replace it with a flat color "
+def dereflectImage(img, min_gray=63, b_span=50, g_span=50, r_span=50, flat_gray=(255, 255, 255)):
+    """ detect gray and replace it with a flat color """
     # would have been better to convert to HSV and do it that way!
     imSize = cv.GetSize(img)
     (width, height) = imSize
     newImg = cv.CreateMat(height, width, cv.CV_8UC3)
     for i in range(height):
         for j in range(width):
-            (b,g,r) = img[i,j]
-            avg = (b+g+r)/3
+            (b, g, r) = img[i, j]
+            avg = (b + g + r) / 3
             if avg > min_gray and b > avg - b_span and b < avg + b_span and g > avg - g_span and g < avg + g_span and r > avg - r_span and r < avg + r_span:
-                newImg[i,j] = flat_gray
+                newImg[i, j] = flat_gray
             else:
-                newImg[i,j] = img[i,j]
+                newImg[i, j] = img[i, j]
     return newImg
     
 def getFeatures(img, hessThresh=1000):
@@ -95,16 +108,16 @@ def getSingleMatchFeatures(template, test, thresh=0.75):
     m2 = []
 
     for i in range(len(templateDescriptors)):
-	(dist,index) = kdtree.query(templateDescriptors[i],2)
-	if ((dist[0] / dist[1]) < thresh):
-	    k1 = templateKeypoints[i]
-	    k2 = testKeypoints[index[0]]
+        (dist, index) = kdtree.query(templateDescriptors[i], 2)
+        if ((dist[0] / dist[1]) < thresh):
+            k1 = templateKeypoints[i]
+            k2 = testKeypoints[index[0]]
+    
+            m1.append(k1)
+            m2.append(k2)
+    return m1, m2
 
-	    m1.append(k1)
-	    m2.append(k2)
-    return m1,m2
-
-def getStableFeatures(frame1,frame2,thresh=0.75):
+def getStableFeatures(frame1, frame2, thresh=0.75):
     # Find stable SURF features between two frames
     (f1Keypoints, f1Descriptors) = getFeatures(frame1)
     (f2Keypoints, f2Descriptors) = getFeatures(frame2)
@@ -113,11 +126,11 @@ def getStableFeatures(frame1,frame2,thresh=0.75):
     stableKeypoints = []
     stableDescriptors = []
     for i in range(len(f1Descriptors)):
-	(dist,index) = kdtree.query(f1Descriptors[i],2)
-	if ((dist[0] / dist[1]) < thresh):
-	    stableKeypoints.append(f2Keypoints[index[0]])
-	    stableDescriptors.append(f2Descriptors[index[0]])
-    return stableKeypoints,stableDescriptors
+        (dist, index) = kdtree.query(f1Descriptors[i], 2)
+        if ((dist[0] / dist[1]) < thresh):
+            stableKeypoints.append(f2Keypoints[index[0]])
+            stableDescriptors.append(f2Descriptors[index[0]])
+    return stableKeypoints, stableDescriptors
 
 def rotationMatrix2x2(radians):
     sina = math.sin(radians)
@@ -146,21 +159,21 @@ def getInliers(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, descripto
     inliers = []
     for match in matches:
         currentInliers = []
-        points =[]
+        points = []
         cv.Circle(myMatchedImage, match, INLIER_SIZE, 255, -1)
         for upper_left in upper_lefts:
             (i, k, p) = upper_left
             x = round(p[0])
             y = round(p[1])
             if 0 <= x and x < width and 0 <= y and y < height:
-                if myMatchedImage[y,x] == 255:
+                if myMatchedImage[y, x] == 255:
                     currentInliers += [upper_left]
         for node in currentInliers:
             (index, keyPoint, upperLeft) = node
             #print node
             
-            points += [(keyPoint,templateKeypoints[index])]
-        inliers += [(match,points)]
+            points += [(keyPoint, templateKeypoints[index])]
+        inliers += [(match, points)]
         cv.Circle(myMatchedImage, match, INLIER_SIZE, 0, -1)
 
     for i in inliers:
@@ -169,27 +182,29 @@ def getInliers(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, descripto
     return inliers # in form of (inlier_point, array of keypoints that hit point)
 
 def getUpperLefts(matchedFeatures, template, test):
-	(templateKeypoints, templateDescriptors) = template
-	(testKeypoints, testDescriptors) = test
-	upper_lefts = []
-	for (templateFeatureIndex, testFeatureIndices) in matchedFeatures:
-		(templatePoint, templateLaplacian, templateSize, templateDirection, templateHessian) = templateKeypoints[templateFeatureIndex]
-		for testFeatureIndex in testFeatureIndices:
-			(testPoint, testLaplacian, testSize, testDirection, testHessian) = testKeypoints[testFeatureIndex]
-            		# vote for upper left
-			rot = rotationMatrix2x2(math.radians(testDirection - templateDirection))
-			(x,y) = templatePoint
-			offset = (x * rot[0,0] + y * rot[1,0], x * rot[0,1] + y * rot[1,1])
-			featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)# * 1.0 * testSize/templateSize
-			upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
-	return upper_lefts
+    """ given a set of matched features, return a list of (templateFeatureIndex, testKeypoint, upperleftPosition) """
+    (templateKeypoints, templateDescriptors) = template
+    (testKeypoints, testDescriptors) = test
+    upper_lefts = []
+    for (templateFeatureIndex, testFeatureIndices) in matchedFeatures:
+        (templatePoint, templateLaplacian, templateSize, templateDirection, templateHessian) = templateKeypoints[templateFeatureIndex]
+        for testFeatureIndex in testFeatureIndices:
+            (testPoint, testLaplacian, testSize, testDirection, testHessian) = testKeypoints[testFeatureIndex]
+                    # vote for upper left
+            rot = rotationMatrix2x2(math.radians(testDirection - templateDirection))
+            (x, y) = templatePoint
+            offset = (x * rot[0, 0] + y * rot[1, 0], x * rot[0, 1] + y * rot[1, 1])
+            featureUpperLeft = numpy.array(testPoint) - numpy.array(offset)# * 1.0 * testSize/templateSize
+            upper_lefts += [(templateFeatureIndex, testKeypoints[testFeatureIndex], featureUpperLeft)]
+    return upper_lefts
 
 def zeroC1(img):
+    """ Zero a grayscale image """
     imSize = cv.GetSize(img)
     (width, height) = imSize
     for i in range(height):
         for j in range(width):
-            img[i,j] = 0
+            img[i, j] = 0
 
 def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_radius=20, vote_threshold=0.03, exclusion_radius=75):
     """ match features to a template """
@@ -199,10 +214,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
     
     (templateKeypoints, templateDescriptors) = template
     (testKeypoints, testDescriptors) = test
-
- #   for key in testKeypoints:
-  #      print key
-	
+    
     # retrieve upper left in image space
     upper_lefts = getUpperLefts(matchedFeatures, template, test)
     
@@ -217,13 +229,13 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
         
         def getColor(self, idx):
             n = (idx * 255 * 255 * 255) / self.length
-            return ((n/(255*255))%255, (n/255)%255, n%255)
+            return ((n / (255 * 255)) % 255, (n / 255) % 255, n % 255)
 
     def drawVote(img, color, testKeypoint, vote):
         (featurePoint, laplacian, size, direction, hessian) = testKeypoint
         p1 = (int(featurePoint[0]), int(featurePoint[1]))
         radians = math.radians(direction)
-        p2 = (int(featurePoint[0]+size*math.cos(radians)), int(featurePoint[1]+size*math.sin(radians)))
+        p2 = (int(featurePoint[0] + size * math.cos(radians)), int(featurePoint[1] + size * math.sin(radians)))
         p3 = (int(vote[0]), int(vote[1]))
         cv.Circle(img, p1, size, color)
         cv.Line(img, p1, p2, color)
@@ -252,7 +264,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
     
     # find bright points in upper left image
     convolvedUpperLeftImage = cv.CreateMat(height, width, cv.CV_32FC1)
-    cv.Smooth(upperLeftImage, convolvedUpperLeftImage, cv.CV_GAUSSIAN, vote_radius*2+1, -1)
+    cv.Smooth(upperLeftImage, convolvedUpperLeftImage, cv.CV_GAUSSIAN, vote_radius * 2 + 1, -1)
     
     cv.ShowImage(CONVOLVED_UPPER_LEFT_IMAGE, convolvedUpperLeftImage)
     
@@ -260,7 +272,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
     sum = 0
     for i in range(height):
         for j in range(width):
-            sum += convolvedUpperLeftImage[i,j]
+            sum += convolvedUpperLeftImage[i, j]
     
     brightenedImage = cv.CreateMat(height, width, cv.CV_32FC1)        
     for i in range(height):
@@ -273,8 +285,8 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
     aboveThreshold = []
     for i in range(height):
         for j in range(width):
-            if convolvedUpperLeftImage[i,j] > vote_threshold:
-                aboveThreshold += [(convolvedUpperLeftImage[i,j], (j,i))]
+            if convolvedUpperLeftImage[i, j] > vote_threshold:
+                aboveThreshold += [(convolvedUpperLeftImage[i, j], (j, i))]
 
     aboveThresholdSorted = sorted(aboveThreshold, key=lambda elt: elt[0])
     aboveThresholdSorted.reverse()
@@ -286,7 +298,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
     matches = []
     for elt in aboveThresholdSorted:
         p = elt[1]
-        (x,y) = p
+        (x, y) = p
         if hashImage[y, x] == 0:
             matches += [p]
             cv.Circle(hashImage, p, exclusion_radius, 255, -1)
@@ -305,11 +317,11 @@ def matchTemplateImage(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, c
     templateImage = grayscaleize(dereflectImage(cv.LoadImageM(templateImagePath)))
     testImage = grayscaleize(dereflectImage(cv.LoadImageM(testImagePath)))
     
-    (x,y) = cube_origin
+    (x, y) = cube_origin
     (width, height) = cube_dim
-    origin = (x+width/2, y+height/2)
-    dim = (width/2, height/2)
-    template = filterFeatures(getFeatures(templateImage), origin, dim)
+    origin = (x + width / 2, y + height / 2)
+    dim = (width / 2, height / 2)
+    template = filterForDistinctFeatures(filterFeaturesByBB(getFeatures(templateImage), origin, dim))
     test = getFeatures(testImage)
     imSize = cv.GetSize(testImage)
     matches = findMatches(imSize, testImage, template, test)
@@ -327,69 +339,68 @@ def matchTemplateWebcam(templateImagePath=BLACK_CUBE, window_name=WEBCAM_WINDOW_
 
 def randColorTriplet():
     """ create a random color """
-    return (numpy.random.randint(0,255),numpy.random.randint(0,255),numpy.random.randint(0,255))
+    return (numpy.random.randint(0, 255), numpy.random.randint(0, 255), numpy.random.randint(0, 255))
 
 
 
-def sideBySideMatchView(gray1,gray2,hessianThresh):
+def sideBySideMatchView(gray1, gray2, hessianThresh):
     #p1,p2 = imageMatch(gray1,gray2,hessianThresh)
-    p1,p2 = getSingleMatchFeatures(gray1, gray2, 1)
+    p1, p2 = getSingleMatchFeatures(gray1, gray2, 1)
     w1, h1 = cv.GetSize(gray1)[:2]
     w2, h2 = cv.GetSize(gray2)[:2]
-    vis = numpy.zeros((max(h1, h2), w1+w2), numpy.uint8)
+    vis = numpy.zeros((max(h1, h2), w1 + w2), numpy.uint8)
     vis[:h1, :w1] = gray1
-    vis[:h2, w1:w1+w2] = gray2
+    vis[:h2, w1:w1 + w2] = gray2
 
     vis = cv.fromarray(vis)
-    visc = cv.CreateMat(max(h1, h2), w1+w2, cv.CV_8UC3)
+    visc = cv.CreateMat(max(h1, h2), w1 + w2, cv.CV_8UC3)
     cv.CvtColor(vis, visc, cv.CV_GRAY2BGR)
 
     # Connect matching features with a line
     for i in range(len(p1)):
-	x1 = int(p1[i][0][0])
-	y1 = int(p1[i][0][1])
-	x2 = int(p2[i][0][0])
-	y2 = int(p2[i][0][1])
-	randColor = (numpy.random.randint(0,255),numpy.random.randint(0,255),numpy.random.randint(0,255))
-	cv.Line(visc, (x1,y1), (x2+w1, y2), randColor)
+        x1 = int(p1[i][0][0])
+        y1 = int(p1[i][0][1])
+        x2 = int(p2[i][0][0])
+        y2 = int(p2[i][0][1])
+        randColor = (numpy.random.randint(0, 255), numpy.random.randint(0, 255), numpy.random.randint(0, 255))
+        cv.Line(visc, (x1, y1), (x2 + w1, y2), randColor)
 
     # Add feature markers
-    visc = overlayKeyPoints(visc,p1,(255,0,255))
-    visc = overlayKeyPoints(visc,p2,(255,0,255),(w1,0))
+    visc = overlayKeyPoints(visc, p1, (255, 0, 255))
+    visc = overlayKeyPoints(visc, p2, (255, 0, 255), (w1, 0))
 
     # Add info
     info = "Stable Matches: " + str(len(p1))
-    cv.PutText(visc, info, (5,h2-10), FONT, (255,0,0))
+    cv.PutText(visc, info, (5, h2 - 10), FONT, (255, 0, 0))
     return visc
 
-def overlayMatchView(gray1,gray2,hessianThresh):
+def overlayMatchView(gray1, gray2, hessianThresh):
     #p1,p2 = imageMatch(gray1,gray2,hessianThresh)
-    p1,p2 = getSingleMatchFeatures(gray1, gray2, 1)
+    p1, p2 = getSingleMatchFeatures(gray1, gray2, 1)
     w1, h1 = cv.GetSize(gray1)[:2]
     w2, h2 = cv.GetSize(gray2)[:2]
 
     visc = gray2
 
     # Add feature markers
-    visc = overlayKeyPoints(visc,p1,(0,0,255))
-    visc = overlayKeyPoints(visc,p2,(0,255,0))
+    visc = overlayKeyPoints(visc, p1, (0, 0, 255))
+    visc = overlayKeyPoints(visc, p2, (0, 255, 0))
     # Connect matching features with a line
     for i in range(len(p1)):
-	x1 = int(p1[i][0][0])
-	y1 = int(p1[i][0][1])
-	x2 = int(p2[i][0][0])
-	y2 = int(p2[i][0][1])
-
-	cv.Line(visc, (x1,y1), (x2, y2), (255,0,0))
+        x1 = int(p1[i][0][0])
+        y1 = int(p1[i][0][1])
+        x2 = int(p2[i][0][0])
+        y2 = int(p2[i][0][1])
+        cv.Line(visc, (x1, y1), (x2, y2), (255, 0, 0))
 
 
     # Add info
     info = "Stable Matches: " + str(len(p1))
-    cv.PutText(visc, info, (5,h2-10), FONT, (255,0,0))
+    cv.PutText(visc, info, (5, h2 - 10), FONT, (255, 0, 0))
 
     return visc
 
-def surfMatchVideoDemo(template = BLACK_CUBE,thresh=0.5):
+def surfMatchVideoDemo(template=BLACK_CUBE, thresh=0.5):
 
     templateGray = cv.LoadImageM("black_cube.png", cv.CV_LOAD_IMAGE_GRAYSCALE)
 
@@ -410,65 +421,64 @@ def surfMatchVideoDemo(template = BLACK_CUBE,thresh=0.5):
     key = cv.WaitKey(1)
     while key != 'q':
         frame = cv.QueryFrame(capture)
-	cv.CvtColor(frame, f2, cv.CV_BGR2GRAY)
-
-	# Find stable SURF features
-	stableKeypoints,stableDescriptors = getStableFeatures(f1, f2)
-	# Match against template's features
+        cv.CvtColor(frame, f2, cv.CV_BGR2GRAY)
+    
+        # Find stable SURF features
+        stableKeypoints, stableDescriptors = getStableFeatures(f1, f2)
+        # Match against template's features
         (templateKeypoints, templateDescriptors) = getFeatures(templateGray)
         kdtree = KDTree(stableDescriptors)
         p1 = []
         p2 = []
-	isMatched1 = [0]*len(templateKeypoints)
-	isMatched2 = [0]*len(stableKeypoints)
-	possibleMatchList = numpy.array([[0,0,0]])
+        isMatched1 = [0] * len(templateKeypoints)
+        isMatched2 = [0] * len(stableKeypoints)
+        possibleMatchList = numpy.array([[0, 0, 0]])
         for i in range(len(templateDescriptors)):
-	    (dist,index) = kdtree.query(templateDescriptors[i],len(stableKeypoints))
-
-    	    sourceID = numpy.array([i]*len(dist))
-	    subMatchList = numpy.array([sourceID,index,dist])
-	    subMatchList = subMatchList.transpose()
-
-	    possibleMatchList = numpy.append(possibleMatchList,subMatchList,axis=0)
-
-#	sortedMatchList = sorted(possibleMatchList, key=lambda matchPair: matchPair[1])
-	sortedMatchList = possibleMatchList[possibleMatchList[:,2].argsort()]
-
-	for i in range(1,len(sortedMatchList)):
-	    sourceIndex = int(sortedMatchList[i,0])
-	    targetIndex = int(sortedMatchList[i,1])
-	    dist = sortedMatchList[i,2]
-	    if (isMatched1[sourceIndex] == 0)&(isMatched2[targetIndex] == 0)&(dist<thresh):
-		isMatched1[sourceIndex] = 1
-		isMatched2[targetIndex] = 1
-		p1.append(templateKeypoints[sourceIndex])
-		p2.append(stableKeypoints[targetIndex])
-
-	# Set up Side by Side Display
-        vis = numpy.zeros((max(h1, h2), w1+w2), numpy.uint8)
-	vis[:h1, :w1] = templateGray
-	vis[:h2, w1:w1+w2] = f2
-
-	vis = cv.fromarray(vis)
-	visc = cv.CreateMat(max(h1, h2), w1+w2, cv.CV_8UC3)
-	cv.CvtColor(vis, visc, cv.CV_GRAY2BGR)
-
-	# Connect matching features with a line
-	for i in range(len(p1)):
-	    x1 = int(p1[i][0][0])
-	    y1 = int(p1[i][0][1])
-	    x2 = int(p2[i][0][0])
-	    y2 = int(p2[i][0][1])
-	    cv.Line(visc, (x1,y1), (x2+w1, y2), (255,0,0))
-
-	# Add feature markers
-	visc = overlayKeyPoints(visc,p1,(255,0,255))
-	visc = overlayKeyPoints(visc,p2,(255,0,255),(w1,0))
-
-	
-	cv.ShowImage("Matchings", visc)
-	f1 = f2
-	cv.WaitKey()
+            (dist, index) = kdtree.query(templateDescriptors[i], len(stableKeypoints))
+            sourceID = numpy.array([i] * len(dist))
+            subMatchList = numpy.array([sourceID, index, dist])
+            subMatchList = subMatchList.transpose()
+    
+            possibleMatchList = numpy.append(possibleMatchList, subMatchList, axis=0)
+    
+        # sortedMatchList = sorted(possibleMatchList, key=lambda matchPair: matchPair[1])
+        sortedMatchList = possibleMatchList[possibleMatchList[:, 2].argsort()]
+    
+        for i in range(1, len(sortedMatchList)):
+            sourceIndex = int(sortedMatchList[i, 0])
+            targetIndex = int(sortedMatchList[i, 1])
+            dist = sortedMatchList[i, 2]
+            if (isMatched1[sourceIndex] == 0) & (isMatched2[targetIndex] == 0) & (dist < thresh):
+                isMatched1[sourceIndex] = 1
+                isMatched2[targetIndex] = 1
+                p1.append(templateKeypoints[sourceIndex])
+                p2.append(stableKeypoints[targetIndex])
+    
+        # Set up Side by Side Display
+            vis = numpy.zeros((max(h1, h2), w1 + w2), numpy.uint8)
+        vis[:h1, :w1] = templateGray
+        vis[:h2, w1:w1 + w2] = f2
+    
+        vis = cv.fromarray(vis)
+        visc = cv.CreateMat(max(h1, h2), w1 + w2, cv.CV_8UC3)
+        cv.CvtColor(vis, visc, cv.CV_GRAY2BGR)
+    
+        # Connect matching features with a line
+        for i in range(len(p1)):
+            x1 = int(p1[i][0][0])
+            y1 = int(p1[i][0][1])
+            x2 = int(p2[i][0][0])
+            y2 = int(p2[i][0][1])
+            cv.Line(visc, (x1, y1), (x2 + w1, y2), (255, 0, 0))
+    
+        # Add feature markers
+        visc = overlayKeyPoints(visc, p1, (255, 0, 255))
+        visc = overlayKeyPoints(visc, p2, (255, 0, 255), (w1, 0))
+    
+        
+        cv.ShowImage("Matchings", visc)
+        f1 = f2
+        cv.WaitKey()
         # exit on q
         key = cv.WaitKey(1)
 
@@ -488,39 +498,38 @@ def surfStableFeatureVideoDemo(displayType=0):
     key = cv.WaitKey(1)
     while key != 'q':
         frame = cv.QueryFrame(capture)
-	imSize = cv.GetSize(frame)
-	
-	cv.CvtColor(frame, f2, cv.CV_BGR2GRAY)
-	if (displayType == 0):
-	    sideBySide = sideBySideMatchView(f1,f2,1000)
+        imSize = cv.GetSize(frame)
+        
+        cv.CvtColor(frame, f2, cv.CV_BGR2GRAY)
+        if (displayType == 0):
+            sideBySide = sideBySideMatchView(f1, f2, 1000)
             cv.ShowImage("w1", sideBySide)
-	elif (displayType == 1):
-	    stable = overlayMatchView(f1,f2,1000)
+        elif (displayType == 1):
+            stable = overlayMatchView(f1, f2, 1000)
             cv.ShowImage("w1", stable)
-	cv.WaitKey()
+        cv.WaitKey()
 
-	f1 = f2
+        f1 = f2
 
         # exit on q
         key = cv.WaitKey(1)
-	#print key
 
-def overlayKeyPoints(imgMat,keyPoints,color,offset=(0,0)):
+def overlayKeyPoints(imgMat, keyPoints, color, offset=(0, 0)):
     # Overlay a set of surf feature marker onto an image
     # If grayscale, convert to color
-    if isinstance(imgMat[0,0], float):
+    if isinstance(imgMat[0, 0], float):
         imSize = cv.GetSize(imgMat)
         overlaid = cv.CreateMat(imSize[1], imSize[0], cv.CV_8UC3)
         cv.CvtColor(imgMat, overlaid, cv.CV_GRAY2BGR)
     else:
-	overlaid = imgMat
-	
+        overlaid = imgMat
+    
     for ((x, y), laplacian, size, fdir, hessian) in keyPoints:
-        r = int(0.5*size)
-	px = int(x + offset[0])
-	py = int(y + offset[1])
+        r = int(0.5 * size)
+        px = int(x + offset[0])
+        py = int(y + offset[1])
         cv.Circle(overlaid, (px, py), r, color)
-	cv.Line(overlaid, (px, py), (int(px+r*numpy.sin(fdir/numpy.pi)), int(py+r*numpy.cos(fdir/numpy.pi))), color)
+        cv.Line(overlaid, (px, py), (int(px + r * numpy.sin(fdir / numpy.pi)), int(py + r * numpy.cos(fdir / numpy.pi))), color)
     return overlaid
 
 
