@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 #from std_msgs.msg import String
 #from cv_bridge import CvBridge, CvBridgeError
 
-NUM_IMAGES=6
+NUM_IMAGES=25
 TEST_IMAGES = ["images/webcam/low-res/%d.jpg" % n for n in range(1, NUM_IMAGES+1)]
 TRAINING_IMAGE = TEST_IMAGES[0]
 TEST_IMAGE = TEST_IMAGES[1]
