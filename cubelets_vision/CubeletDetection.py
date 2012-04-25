@@ -11,10 +11,13 @@ import xml.etree.ElementTree as ET
 #from std_msgs.msg import String
 #from cv_bridge import CvBridge, CvBridgeError
 
-TRAINING_IMAGE = "images/webcam/low-res/1.jpg"
+NUM_IMAGES=6
+TEST_IMAGES = ["images/webcam/low-res/%d.jpg" % n for n in range(1, NUM_IMAGES+1)]
+TRAINING_IMAGE = TEST_IMAGES[0]
+TEST_IMAGE = TEST_IMAGES[1]
 TRAINING_XML = "images/webcam/low-res/truth_values.xml"
 TRAINING_IMAGE_NAME = "1.jpg"
-TEST_IMAGE = "images/webcam/low-res/2.jpg"
+
 CUBE_RADIUS = 28
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
@@ -28,6 +31,7 @@ INLIER_SIZE = 10
 BRIGHTENED_IMAGE = "Brightened Image"
 RESULT_IMAGE = "Result Image"
 COMBINED_RESULTS = "Combined Results"
+TEMPLATE_STR = "Template"
 
 BLACK = "black"
 RED = "red"
@@ -358,20 +362,17 @@ def surfMatch(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE,
         #cv.ShowImage(IMAGE_WINDOW_NAME + " " + color, featureImage)
     cv.WaitKey()
     
-def templateMatch(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE, 
+def templateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE, 
                        training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS):
     """ match using template match """
-    testImage = cv.LoadImageM(testImagePath)
-    cv.ShowImage(TEST_IMAGE, testImage)
     
     templateImage = cv.LoadImageM(templateImagePath)
-    cv.ShowImage(TRAINING_IMAGE, templateImage)
+    # cv.ShowImage(TRAINING_IMAGE, templateImage)
     
     tree = ET.parse(TRAINING_XML)
     cubes = tree.findall("image[@name='" + TRAINING_IMAGE_NAME + "']/cube")
-    results = {}
-    rh = 1+testImage.height-cube_radius*2
-    rw = 1+testImage.width-cube_radius*2
+    
+    templates = {}
     for cube in cubes:
         color = cube.attrib["color"]
         x = int(cube.attrib["x"])
@@ -380,15 +381,9 @@ def templateMatch(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE,
         for i in range(cube_radius*2):
             for j in range(cube_radius*2):
                 template[i,j] = templateImage[y+i-cube_radius, x+j-cube_radius]
-        cv.ShowImage(color, template)
-        result = cv.CreateMat(rh, rw, cv.CV_32FC1)
-        cv.MatchTemplate(testImage, template, result, cv.CV_TM_SQDIFF_NORMED)
-        cv.ShowImage(RESULT_IMAGE + " " + color, result)
-        (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(result)
-        results[color] = (min_x + cube_radius, min_y + cube_radius)
-    
-    combinedResults = cv.CloneMat(testImage)
-    
+        # cv.ShowImage("%s %s" % (TEMPLATE_STR, color), template)
+        templates[color] = template
+            
     def getColor(color):
         if color == BLACK:
             return (0, 0, 0)
@@ -396,10 +391,25 @@ def templateMatch(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE,
             return (0, 0, 255)
         elif color == CLEAR:
             return (255,255,255)
-    
-    for color in results:
-        cv.Circle(combinedResults, results[color], cube_radius, getColor(color))
-    cv.ShowImage(COMBINED_RESULTS, combinedResults)
+        
+    for testImagePath in testImages:
+        testImage = cv.LoadImageM(testImagePath)
+        # cv.ShowImage("%s %s" % (testImagePath, TEST_IMAGE), testImage)
+        results = {}
+        rh = 1+testImage.height-cube_radius*2
+        rw = 1+testImage.width-cube_radius*2
+        for color in templates:
+            result = cv.CreateMat(rh, rw, cv.CV_32FC1)
+            cv.MatchTemplate(testImage, templates[color], result, cv.CV_TM_SQDIFF_NORMED)
+            # cv.ShowImage("%s %s %s" % (testImagePath, RESULT_IMAGE, color), result)
+            (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(result)
+            results[color] = (min_x + cube_radius, min_y + cube_radius)
+        
+        combinedResults = cv.CloneMat(testImage)
+        
+        for color in results:
+            cv.Circle(combinedResults, results[color], cube_radius, getColor(color))
+        cv.ShowImage("%s %s" % (testImagePath, COMBINED_RESULTS), combinedResults)
     cv.WaitKey()
     
 def matchTemplateWebcam(templateImagePath=TRAINING_IMAGE, window_name=WEBCAM_WINDOW_NAME, camera_index=CAMERA_INDEX):
