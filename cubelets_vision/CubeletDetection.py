@@ -7,13 +7,15 @@ import cv, cv2
 import numpy
 import math
 from scipy.spatial import KDTree
+import xml.etree.ElementTree as ET
 #from std_msgs.msg import String
 #from cv_bridge import CvBridge, CvBridgeError
 
-BLACK_CUBE = "images/webcam/low-res/1.jpg" #"images/black_cube.png"
-CUBE_ORIGIN = (0, 0)
-CUBE_DIM = (219, 219)
-CUBE_ARRAY = "images/webcam/low-res/2.jpg" #"images/synthetic.png"#"images/cubeArray.png"
+TRAINING_IMAGE = "images/webcam/low-res/1.jpg"
+TRAINING_XML = "images/webcam/low-res/truth_values.xml"
+TRAINING_IMAGE_NAME = "1.jpg"
+TEST_IMAGE = "images/webcam/low-res/10.jpg"
+CUBE_RADIUS = 28
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
 UPPER_LEFT_IMAGE = "Upper Left"
@@ -30,25 +32,26 @@ def loadImage(path, typ=cv.CV_LOAD_IMAGE_GRAYSCALE):
     """ load an image """
     return cv.LoadImageM(path, typ)
 
-def filterFeaturesByBB(features, origin, dim):
-    """ Filter features based on a bounding box """
-    (min_x, min_y) = origin
-    (width, height) = dim
-    (max_x, max_y) = (min_x + width, min_y + height)
+def filterFeaturesByDisc(features, cube, cube_radius):
+    """ Filter features based on a disc """
+    cx = float(cube.attrib["x"])
+    cy = float(cube.attrib["y"])
     (keypoints, descriptors) = features
     filtered_keypoints = []
     filtered_descriptors = []
     for i in range(len(keypoints)):
         ((x, y), laplacian, size, direction, hessian) = keypoints[i]
-        if x >= min_x and x <= max_x and y >= min_y and y <= max_y:
-            # convert to center
-            new_keypoint = ((x - min_x, y - min_y), laplacian, size, direction, hessian)
+        diff_x = x - cx
+        diff_y = y - cy
+        if diff_x*diff_x + diff_y * diff_y < cube_radius*cube_radius:
+            # use relative to center position
+            new_keypoint = ((diff_x, diff_y), laplacian, size, direction, hessian)
             filtered_keypoints += [new_keypoint]
             filtered_descriptors += [descriptors[i]]
     
     return (filtered_keypoints, filtered_descriptors)
 
-def filterForDistinctFeatures(features, radius=0.6):
+def filterForDistinctFeatures(features, radius=0.2):
     """ filter for distinctive features """
     (keypoints, descriptors) = features
     kdtree = KDTree(descriptors)
@@ -163,7 +166,7 @@ def rotationMatrix2x2(radians):
     cosa = math.cos(radians)
     return numpy.matrix([[cosa, sina], [-sina, cosa]])
 
-def getInliers(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, descriptor_radius=0.1):
+def getInliers(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE, descriptor_radius=0.1):
     templateImage = loadImage(templateImagePath)
     testImage = loadImage(testImagePath)
     
@@ -232,7 +235,7 @@ def zeroC1(img):
         for j in range(width):
             img[i, j] = 0
 
-def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_radius=20, vote_threshold=0.03, exclusion_radius=75):
+def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_radius=30, vote_threshold=0.005, exclusion_radius=20, match_size=MATCH_SIZE):
     """ match features to a template """
     # TODO annotate matches with features
     (width, height) = imSize
@@ -272,8 +275,6 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
         (templateFeatureIndex, testKeypoint, featureUpperLeft) = upper_left
         drawVote(voteImage, colorIndex.getColor(templateFeatureIndex), testKeypoint, featureUpperLeft)
     
-    cv.ShowImage(VOTING_IMAGE, voteImage)
-    
     # create a upper left image
     upperLeftImage = cv.CreateMat(height, width, cv.CV_32FC1)
     zeroC1(upperLeftImage)
@@ -285,14 +286,9 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
         if 0 <= x and x < width and 0 <= y and y < height:
             upperLeftImage[y, x] += 1
     
-    cv.ShowImage(UPPER_LEFT_IMAGE, upperLeftImage)
-    
-    
     # find bright points in upper left image
     convolvedUpperLeftImage = cv.CreateMat(height, width, cv.CV_32FC1)
     cv.Smooth(upperLeftImage, convolvedUpperLeftImage, cv.CV_GAUSSIAN, vote_radius * 2 + 1, -1)
-    
-    cv.ShowImage(CONVOLVED_UPPER_LEFT_IMAGE, convolvedUpperLeftImage)
     
     # get average value of convolved upper left image
     sum = 0
@@ -304,8 +300,6 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
     for i in range(height):
         for j in range(width):
             brightenedImage[i, j] = convolvedUpperLeftImage[i, j] * testImage[i, j] * sum / (height * width) 
-            
-    cv.ShowImage(BRIGHTENED_IMAGE, brightenedImage)
     
     # find points in convolved upper left image above threshold
     aboveThreshold = []
@@ -328,38 +322,36 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
         if hashImage[y, x] == 0:
             matches += [p]
             cv.Circle(hashImage, p, exclusion_radius, 255, -1)
-    cv.ShowImage(HASH_CIRCLES, hashImage)
-
-    showMatchedImage(voteImage, matches)
-    return matches    
-        
-def showMatchedImage(testImage, matches, match_size=MATCH_SIZE):
-    for match in matches:
-        cv.Circle(testImage, match, match_size, randColorTriplet(), -1)
-    cv.ShowImage(IMAGE_WINDOW_NAME, testImage)
-
-def matchTemplateImage(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, cube_origin=CUBE_ORIGIN, cube_dim=CUBE_DIM):
-    """ create a template, then match an image against it """
-    rgb_gray_detector = RGBGrayDetector()
-    templateImage = grayscaleize(dereflectImage(cv.LoadImageM(templateImagePath), rgb_gray_detector))
-    testImage = grayscaleize(dereflectImage(cv.LoadImageM(testImagePath), rgb_gray_detector))
-    #templateImage = thresholdImage(cv.LoadImageM(templateImagePath), rgb_gray_detector)
-    #testImage = thresholdImage(cv.LoadImageM(testImagePath), rgb_gray_detector)
-    #templateImage = loadImage(templateImagePath)
-    #testImage = loadImage(testImagePath)
     
-    (x, y) = cube_origin
-    (width, height) = cube_dim
-    origin = (x + width / 2, y + height / 2)
-    dim = (width / 2, height / 2)
-    template = getFeatures(templateImage) #filterForDistinctFeatures(filterFeaturesByBB(getFeatures(templateImage), origin, dim))
+    featureImage = cv.CloneMat(testImage)
+    
+    for match in matches:
+        cv.Circle(featureImage, match, match_size, randColorTriplet(), -1)
+
+    return (voteImage, upperLeftImage, convolvedUpperLeftImage, brightenedImage, hashImage, featureImage)    
+
+def matchTemplateImage(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE, 
+                       training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS):
+    """ create templates, then match an image against them """
+    templateImage = loadImage(templateImagePath)
+    tree = ET.parse(TRAINING_XML)
+    cubes = tree.findall("image[@name='" + TRAINING_IMAGE_NAME + "']/cube")
+    templates = [(cube.attrib["color"], filterForDistinctFeatures(filterFeaturesByDisc(getFeatures(templateImage), cube, cube_radius))) for cube in cubes]
+    
+    testImage = loadImage(testImagePath)
     test = getFeatures(testImage)
     imSize = cv.GetSize(testImage)
-    matches = findMatches(imSize, testImage, template, test)
-    showMatchedImage(testImage, matches)
+    for (color, template) in templates:
+        (voteImage, upperLeftImage, convolvedUpperLeftImage, brightenedImage, hashImage, featureImage) = findMatches(imSize, testImage, template, test)
+        cv.ShowImage(VOTING_IMAGE + " " + color, voteImage)
+        #cv.ShowImage(UPPER_LEFT_IMAGE + " " + color, upperLeftImage)
+        #cv.ShowImage(CONVOLVED_UPPER_LEFT_IMAGE + " " + color, convolvedUpperLeftImage)
+        #cv.ShowImage(BRIGHTENED_IMAGE + " " + color, brightenedImage)
+        cv.ShowImage(HASH_CIRCLES + " " + color, hashImage)
+        #cv.ShowImage(IMAGE_WINDOW_NAME + " " + color, featureImage)
     cv.WaitKey()
     
-def matchTemplateWebcam(templateImagePath=BLACK_CUBE, window_name=WEBCAM_WINDOW_NAME, camera_index=CAMERA_INDEX):
+def matchTemplateWebcam(templateImagePath=TRAINING_IMAGE, window_name=WEBCAM_WINDOW_NAME, camera_index=CAMERA_INDEX):
     """ create a template, then match webcam stream against it """
     cv.NamedWindow(window_name, cv.CV_WINDOW_AUTOSIZE)
     capture = cv.CaptureFromCAM(camera_index)
@@ -431,7 +423,7 @@ def overlayMatchView(gray1, gray2, hessianThresh):
 
     return visc
 
-def surfMatchVideoDemo(template=BLACK_CUBE, thresh=0.5):
+def surfMatchVideoDemo(template=TRAINING_IMAGE, thresh=0.5):
 
     templateGray = cv.LoadImageM("black_cube.png", cv.CV_LOAD_IMAGE_GRAYSCALE)
 
@@ -560,7 +552,7 @@ def overlayKeyPoints(imgMat, keyPoints, color, offset=(0, 0)):
         px = int(x + offset[0])
         py = int(y + offset[1])
         cv.Circle(overlaid, (px, py), r, color)
-        cv.Line(overlaid, (px, py), (int(px + r * numpy.sin(fdir / numpy.pi)), int(py + r * numpy.cos(fdir / numpy.pi))), color)
+        #cv.Line(overlaid, (px, py), (int(px + r * numpy.sin(fdir / numpy.pi)), int(py + r * numpy.cos(fdir / numpy.pi))), color)
     return overlaid
 
 
