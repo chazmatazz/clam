@@ -10,10 +10,10 @@ from scipy.spatial import KDTree
 #from std_msgs.msg import String
 #from cv_bridge import CvBridge, CvBridgeError
 
-BLACK_CUBE = "images/black_cube.png"
+BLACK_CUBE = "images/webcam/low-res/1.jpg" #"images/black_cube.png"
 CUBE_ORIGIN = (0, 0)
 CUBE_DIM = (219, 219)
-CUBE_ARRAY = "images/synthetic.png"#"images/cubeArray.png"
+CUBE_ARRAY = "images/webcam/low-res/2.jpg" #"images/synthetic.png"#"images/cubeArray.png"
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
 UPPER_LEFT_IMAGE = "Upper Left"
@@ -48,14 +48,14 @@ def filterFeaturesByBB(features, origin, dim):
     
     return (filtered_keypoints, filtered_descriptors)
 
-def filterForDistinctFeatures(features, radius=0.5):
+def filterForDistinctFeatures(features, radius=0.6):
     """ filter for distinctive features """
     (keypoints, descriptors) = features
     kdtree = KDTree(descriptors)
     filteredKeypoints = []
     filteredDescriptors = []
     for i in range(len(descriptors)):
-        if len(kdtree.query_ball_point(descriptors[i], radius)) == 1:
+        if len(kdtree.query_ball_point(descriptors[i], radius)) <= 1:
             filteredKeypoints += [keypoints[i]]
             filteredDescriptors += [descriptors[i]]
     return (filteredKeypoints, filteredDescriptors)
@@ -67,23 +67,49 @@ def grayscaleize(img):
     newImg = cv.CreateMat(height, width, cv.CV_8UC1)
     cv.CvtColor(img, newImg, cv.CV_BGR2GRAY)
     return newImg
-    
-def dereflectImage(img, min_gray=63, b_span=50, g_span=50, r_span=50, flat_gray=(255, 255, 255)):
-    """ detect gray and replace it with a flat color """
+
+class RGBGrayDetector:
     # would have been better to convert to HSV and do it that way!
+    def __init__(self, min_gray=63, b_span=50, g_span=50, r_span=50):
+        self.min_gray = min_gray
+        self.b_span = b_span
+        self.g_span = g_span
+        self.r_span = r_span
+        
+    def is_gray(self, pix):
+        (b, g, r) = pix
+        avg = (b + g + r) / 3
+        return (avg > self.min_gray and b > avg - self.b_span and 
+                b < avg + self.b_span and g > avg - self.g_span and 
+                g < avg + self.g_span and r > avg - self.r_span and 
+                r < avg + self.r_span)
+    
+def dereflectImage(img, rgb_gray_detector, flat_gray=(255, 255, 255)):
+    """ detect gray and replace it with a flat color """
     imSize = cv.GetSize(img)
     (width, height) = imSize
     newImg = cv.CreateMat(height, width, cv.CV_8UC3)
     for i in range(height):
         for j in range(width):
-            (b, g, r) = img[i, j]
-            avg = (b + g + r) / 3
-            if avg > min_gray and b > avg - b_span and b < avg + b_span and g > avg - g_span and g < avg + g_span and r > avg - r_span and r < avg + r_span:
+            if rgb_gray_detector.is_gray(img[i,j]):
                 newImg[i, j] = flat_gray
             else:
                 newImg[i, j] = img[i, j]
     return newImg
-    
+
+def thresholdImage(img, rgb_gray_detector):
+    """ detect gray and represent as black, rest white """
+    imSize = cv.GetSize(img)
+    (width, height) = imSize
+    newImg = cv.CreateMat(height, width, cv.CV_8UC1)
+    for i in range(height):
+        for j in range(width):
+            if rgb_gray_detector.is_gray(img[i,j]):
+                newImg[i, j] = 0
+            else:
+                newImg[i, j] = 255
+    return newImg
+
 def getFeatures(img, hessThresh=1000):
     """ get features of image """
     return cv.ExtractSURF(img, None, cv.CreateMemStorage(), (0, hessThresh, 3, 1))
@@ -314,14 +340,19 @@ def showMatchedImage(testImage, matches, match_size=MATCH_SIZE):
 
 def matchTemplateImage(templateImagePath=BLACK_CUBE, testImagePath=CUBE_ARRAY, cube_origin=CUBE_ORIGIN, cube_dim=CUBE_DIM):
     """ create a template, then match an image against it """
-    templateImage = grayscaleize(dereflectImage(cv.LoadImageM(templateImagePath)))
-    testImage = grayscaleize(dereflectImage(cv.LoadImageM(testImagePath)))
+    rgb_gray_detector = RGBGrayDetector()
+    templateImage = grayscaleize(dereflectImage(cv.LoadImageM(templateImagePath), rgb_gray_detector))
+    testImage = grayscaleize(dereflectImage(cv.LoadImageM(testImagePath), rgb_gray_detector))
+    #templateImage = thresholdImage(cv.LoadImageM(templateImagePath), rgb_gray_detector)
+    #testImage = thresholdImage(cv.LoadImageM(testImagePath), rgb_gray_detector)
+    #templateImage = loadImage(templateImagePath)
+    #testImage = loadImage(testImagePath)
     
     (x, y) = cube_origin
     (width, height) = cube_dim
     origin = (x + width / 2, y + height / 2)
     dim = (width / 2, height / 2)
-    template = filterForDistinctFeatures(filterFeaturesByBB(getFeatures(templateImage), origin, dim))
+    template = getFeatures(templateImage) #filterForDistinctFeatures(filterFeaturesByBB(getFeatures(templateImage), origin, dim))
     test = getFeatures(testImage)
     imSize = cv.GetSize(testImage)
     matches = findMatches(imSize, testImage, template, test)

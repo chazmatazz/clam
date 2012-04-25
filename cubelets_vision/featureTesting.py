@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#import roslib; roslib.load_manifest('cubelets_vision')
-import roslib; roslib.load_manifest('beginner_tutorials')
+import roslib; roslib.load_manifest('cubelets_vision')
+#import roslib; roslib.load_manifest('beginner_tutorials')
 import sys
 import rospy
 import cv,cv2
