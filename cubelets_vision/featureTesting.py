@@ -9,7 +9,7 @@ import math
 from scipy.spatial import KDTree
 from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
-from CubeletsSURF import *
+from CubeletDetection import *
 
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 

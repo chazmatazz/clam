@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 TRAINING_IMAGE = "images/webcam/low-res/1.jpg"
 TRAINING_XML = "images/webcam/low-res/truth_values.xml"
 TRAINING_IMAGE_NAME = "1.jpg"
-TEST_IMAGE = "images/webcam/low-res/10.jpg"
+TEST_IMAGE = "images/webcam/low-res/2.jpg"
 CUBE_RADIUS = 28
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
@@ -26,6 +26,13 @@ CAMERA_INDEX = 0
 MATCH_SIZE = 5
 INLIER_SIZE = 10
 BRIGHTENED_IMAGE = "Brightened Image"
+RESULT_IMAGE = "Result Image"
+COMBINED_RESULTS = "Combined Results"
+
+BLACK = "black"
+RED = "red"
+CLEAR = "clear"
+
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
 def loadImage(path, typ=cv.CV_LOAD_IMAGE_GRAYSCALE):
@@ -330,7 +337,7 @@ def findMatches(imSize, testImage, template, test, descriptor_radius=0.5, vote_r
 
     return (voteImage, upperLeftImage, convolvedUpperLeftImage, brightenedImage, hashImage, featureImage)    
 
-def matchTemplateImage(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE, 
+def surfMatch(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE, 
                        training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS):
     """ create templates, then match an image against them """
     templateImage = loadImage(templateImagePath)
@@ -349,6 +356,50 @@ def matchTemplateImage(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAG
         #cv.ShowImage(BRIGHTENED_IMAGE + " " + color, brightenedImage)
         cv.ShowImage(HASH_CIRCLES + " " + color, hashImage)
         #cv.ShowImage(IMAGE_WINDOW_NAME + " " + color, featureImage)
+    cv.WaitKey()
+    
+def templateMatch(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE, 
+                       training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS):
+    """ match using template match """
+    testImage = cv.LoadImageM(testImagePath)
+    cv.ShowImage(TEST_IMAGE, testImage)
+    
+    templateImage = cv.LoadImageM(templateImagePath)
+    cv.ShowImage(TRAINING_IMAGE, templateImage)
+    
+    tree = ET.parse(TRAINING_XML)
+    cubes = tree.findall("image[@name='" + TRAINING_IMAGE_NAME + "']/cube")
+    results = {}
+    rh = 1+testImage.height-cube_radius*2
+    rw = 1+testImage.width-cube_radius*2
+    for cube in cubes:
+        color = cube.attrib["color"]
+        x = int(cube.attrib["x"])
+        y = int(cube.attrib["y"])
+        template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC3)
+        for i in range(cube_radius*2):
+            for j in range(cube_radius*2):
+                template[i,j] = templateImage[y+i-cube_radius, x+j-cube_radius]
+        cv.ShowImage(color, template)
+        result = cv.CreateMat(rh, rw, cv.CV_32FC1)
+        cv.MatchTemplate(testImage, template, result, cv.CV_TM_SQDIFF_NORMED)
+        cv.ShowImage(RESULT_IMAGE + " " + color, result)
+        (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(result)
+        results[color] = (min_x + cube_radius, min_y + cube_radius)
+    
+    combinedResults = cv.CloneMat(testImage)
+    
+    def getColor(color):
+        if color == BLACK:
+            return (0, 0, 0)
+        elif color == RED:
+            return (0, 0, 255)
+        elif color == CLEAR:
+            return (255,255,255)
+    
+    for color in results:
+        cv.Circle(combinedResults, results[color], cube_radius, getColor(color))
+    cv.ShowImage(COMBINED_RESULTS, combinedResults)
     cv.WaitKey()
     
 def matchTemplateWebcam(templateImagePath=TRAINING_IMAGE, window_name=WEBCAM_WINDOW_NAME, camera_index=CAMERA_INDEX):

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
 import CubeletDetection
 
-CubeletDetection.matchTemplateImage()
+#CubeletDetection.surfMatch()
+CubeletDetection.templateMatch()
