@@ -616,5 +616,30 @@ def overlayKeyPoints(imgMat, keyPoints, color, offset=(0, 0)):
         #cv.Line(overlaid, (px, py), (int(px + r * numpy.sin(fdir / numpy.pi)), int(py + r * numpy.cos(fdir / numpy.pi))), color)
     return overlaid
 
+def rotateImage(img,center,degrees):
+	# Rotate an image within its frame bounds 
+	# (width and height do not change)
+	rotated = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
+	mapMatrix = cv.CreateMat(2, 3, cv.CV_32FC1)
+	cv.GetRotationMatrix2D(center, degrees, 1, mapMatrix)
+	cv.WarpAffine(img, rotated, mapMatrix)
 
+	return rotated
+
+def subImage(img,center,radius):
+	# Return a 2r x 2r square of the source image
+	(x,y) = center
+	if (img.channels == 3):
+		square = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
+	elif (img.channels == 1):
+		square = cv.CreateMat(img.height, img.width, cv.CV_8UC1)
+	else:
+		# No reason for us to have any other channel count
+		return -1
+
+	for i in range(radius*2):
+		for j in range(radius*2):
+			square[i,j] = img[y+i-radius, x+j-radius]
+
+	return square
 
