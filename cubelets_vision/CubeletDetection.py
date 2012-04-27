@@ -11,12 +11,12 @@ import xml.etree.ElementTree as ET
 #from std_msgs.msg import String
 #from cv_bridge import CvBridge, CvBridgeError
 
-NUM_IMAGES=25
-TEST_IMAGES = ["images/webcam/low-res/%d.jpg" % n for n in range(1, NUM_IMAGES+1)]
+NUM_IMAGES=20
+TEST_IMAGES = ["images/webcam/low-res-white/%d.jpg" % n for n in range(1, NUM_IMAGES+1)]
 TRAINING_IMAGE = TEST_IMAGES[0]
 TEST_IMAGE = TEST_IMAGES[1]
-TRAINING_XML = "images/webcam/low-res/truth_values.xml"
-TRAINING_IMAGE_NAME = "1.jpg"
+TRAINING_XML = "images/webcam/low-res-white/truth_values.xml"
+TRAINING_IMAGE_NAME = "20.jpg"
 
 CUBE_RADIUS = 28
 IMAGE_WINDOW_NAME = "Image"
