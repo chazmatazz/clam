@@ -11,14 +11,14 @@ import xml.etree.ElementTree as ET
 #from std_msgs.msg import String
 #from cv_bridge import CvBridge, CvBridgeError
 
-NUM_IMAGES=20
+NUM_IMAGES=18
 TEST_IMAGES = ["images/webcam/low-res-white/%d.jpg" % n for n in range(1, NUM_IMAGES+1)]
-TRAINING_IMAGE = TEST_IMAGES[0]
+TRAINING_IMAGE = TEST_IMAGES[1]
 TEST_IMAGE = TEST_IMAGES[1]
 TRAINING_XML = "images/webcam/low-res-white/truth_values.xml"
-TRAINING_IMAGE_NAME = "20.jpg"
+TRAINING_IMAGE_NAME = "2.jpg"
 
-CUBE_RADIUS = 28
+CUBE_RADIUS = 20
 IMAGE_WINDOW_NAME = "Image"
 WEBCAM_WINDOW_NAME = "WebCam"
 UPPER_LEFT_IMAGE = "Upper Left"
@@ -36,7 +36,8 @@ TEMPLATE_STR = "Template"
 BLACK = "black"
 RED = "red"
 CLEAR = "clear"
-
+BLUETOOTH = "bluetooth"
+    
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
 def loadImage(path, typ=cv.CV_LOAD_IMAGE_GRAYSCALE):
@@ -377,11 +378,11 @@ def templateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
         color = cube.attrib["color"]
         x = int(cube.attrib["x"])
         y = int(cube.attrib["y"])
-#        template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC3)
-#        for i in range(cube_radius*2):
-#            for j in range(cube_radius*2):
-#                template[i,j] = templateImage[y+i-cube_radius, x+j-cube_radius]
-		template = subImage(templateImage,(x,y),cube_radius)
+        template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC3)
+        for i in range(cube_radius*2):
+            for j in range(cube_radius*2):
+                template[i,j] = templateImage[y+i-cube_radius, x+j-cube_radius]
+        #template = subImage(templateImage,(x,y),cube_radius)
         # cv.ShowImage("%s %s" % (TEMPLATE_STR, color), template)
         templates[color] = template
             
@@ -392,6 +393,8 @@ def templateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
             return (0, 0, 255)
         elif color == CLEAR:
             return (255,255,255)
+        elif color == BLUETOOTH:
+            return (255, 0, 0)
         
     for testImagePath in testImages:
         testImage = cv.LoadImageM(testImagePath)
@@ -631,9 +634,9 @@ def subImage(img,center,radius):
 	# Return a 2r x 2r square of the source image
 	(x,y) = center
 	if (img.channels == 3):
-		square = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
+		square = cv.CreateMat(img.height, img.width, cv.CV_32FC3)
 	elif (img.channels == 1):
-		square = cv.CreateMat(img.height, img.width, cv.CV_8UC1)
+		square = cv.CreateMat(img.height, img.width, cv.CV_32FC1)
 	else:
 		# No reason for us to have any other channel count
 		return -1
