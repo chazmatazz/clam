@@ -1,8 +1,8 @@
 <truth-values camera="low-res" height="71">
-<image name="20.jpg">
-    <cube color="black" z-index="1" x="447" y="309"/>
-    <cube color="red" z-index="1" x="541" y="141"/>
-    <cube color="clear" z-index="1" x="600" y="308" />
-    <cube color="bluetooth" z-index="1" x="365" y="145" />
+<image name="2.jpg">
+    <cube color="black" z-index="1" x="582" y="110"/>
+    <cube color="red" z-index="1" x="352" y="44"/>
+    <cube color="clear" z-index="1" x="379" y="214" />
+    <cube color="bluetooth" z-index="1" x="259" y="243" />
 </image>
 </truth-values>
