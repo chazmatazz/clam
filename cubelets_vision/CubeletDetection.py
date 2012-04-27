@@ -377,10 +377,11 @@ def templateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
         color = cube.attrib["color"]
         x = int(cube.attrib["x"])
         y = int(cube.attrib["y"])
-        template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC3)
-        for i in range(cube_radius*2):
-            for j in range(cube_radius*2):
-                template[i,j] = templateImage[y+i-cube_radius, x+j-cube_radius]
+#        template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC3)
+#        for i in range(cube_radius*2):
+#            for j in range(cube_radius*2):
+#                template[i,j] = templateImage[y+i-cube_radius, x+j-cube_radius]
+		template = subImage(templateImage,(x,y),cube_radius)
         # cv.ShowImage("%s %s" % (TEMPLATE_STR, color), template)
         templates[color] = template
             
@@ -642,4 +643,57 @@ def subImage(img,center,radius):
 			square[i,j] = img[y+i-radius, x+j-radius]
 
 	return square
+
+def vhDeltaProductFilter(gray):
+	# at each pixel, take the difference of values between the pixel above and pixel below,
+	# and multiply it with the difference for the pixels to the left and right.
+	filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
+
+	margin = 2
+	for y in range(margin/2,gray.height-margin):
+		for x in range(margin/2,gray.width-margin):
+			dy = abs(gray[y+1,x] - gray[y-1,x])
+			dx = abs(gray[y,x-1] - gray[y,x+1])
+#			d3 = abs(gray[y+1,x+1] - gray[y-1,x-1])
+#			d4 = abs(gray[y+1,x-1] - gray[y-1,x+1])
+
+			filtered[y,x] = dy * dx #* d3 * d4
+
+	return filtered
+
+def poolAndIsolationFilter(gray,initialThresh=0.15,iterations=10):
+	filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
+	cv.Copy(gray,filtered)
+	#cv.ShowImage('preErode',filtered)
+
+	# Initial Smooth, Erosion, and Threshold
+	cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
+	for y in range(0,filtered.height):
+		for x in range(0,filtered.width):
+			if (filtered[y,x] < 255*initialThresh):
+				filtered[y,x] = 0
+			else:
+				filtered[y,x] = 255
+	cv.Erode(filtered, filtered, None, 1 );
+	#cv.ShowImage('postErode',filtered)
+
+	# Repeatedly Dilate and Erode to Merge Nearby Bright Spots
+	for i in range(0,iterations):
+		cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
+		cv.Dilate(filtered, filtered, None, 1 )
+		cv.Erode(filtered, filtered, None, 1 )
+
+	#cv.ShowImage('postErosionDilation',filtered)
+
+	# Smooth, Erode and Threshold a final time
+	cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
+	cv.Erode(filtered, filtered, None, 3 );
+	for y in range(0,filtered.height):
+		for x in range(0,filtered.width):
+			if filtered[y,x] > 255.0*0.1:
+				filtered[y,x] = 255
+			else:
+				filtered[y,x] = 0
+
+	return filtered
 
