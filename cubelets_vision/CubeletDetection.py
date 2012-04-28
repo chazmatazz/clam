@@ -37,6 +37,8 @@ BLACK = "black"
 RED = "red"
 CLEAR = "clear"
 BLUETOOTH = "bluetooth"
+
+THRESHOLDS = {BLACK:0.1, RED:0.1, CLEAR:0.1, BLUETOOTH:0.1}
     
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
@@ -364,7 +366,7 @@ def surfMatch(templateImagePath=TRAINING_IMAGE, testImagePath=TEST_IMAGE,
     cv.WaitKey()
     
 def templateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE, 
-                       training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS):
+                       training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS, thresholds=THRESHOLDS):
     """ match using template match """
     
     templateImage = cv.LoadImageM(templateImagePath)
@@ -405,14 +407,20 @@ def templateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
         for color in templates:
             result = cv.CreateMat(rh, rw, cv.CV_32FC1)
             cv.MatchTemplate(testImage, templates[color], result, cv.CV_TM_SQDIFF_NORMED)
-            # cv.ShowImage("%s %s %s" % (testImagePath, RESULT_IMAGE, color), result)
-            (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(result)
-            results[color] = (min_x + cube_radius, min_y + cube_radius)
+            minval = 0
+            results[color] = []
+            while minval < thresholds[color]:
+                # cv.ShowImage("%s %s %s" % (testImagePath, RESULT_IMAGE, color), result)
+                (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(result)
+                print minval
+                results[color] += [(min_x + cube_radius, min_y + cube_radius)]
+                cv.Circle(result, (min_x, min_y), cube_radius*2, maxval, -1)
         
         combinedResults = cv.CloneMat(testImage)
         
         for color in results:
-            cv.Circle(combinedResults, results[color], cube_radius, getColor(color))
+            for p in results[color]:
+                    cv.Circle(combinedResults, p, cube_radius, getColor(color))
         cv.ShowImage("%s %s" % (testImagePath, COMBINED_RESULTS), combinedResults)
     cv.WaitKey()
     
