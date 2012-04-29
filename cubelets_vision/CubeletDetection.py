@@ -672,6 +672,22 @@ def vhDeltaProductFilter(gray):
 
 	return filtered
 
+def vhDeltaProductFilter2(gray):
+	# Take Difference from each direction seperately, and scale down
+	filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
+
+	margin = 2
+	for y in range(margin/2,gray.height-margin):
+		for x in range(margin/2,gray.width-margin):
+			dy1 = abs(gray[y+1,x] - gray[y,x])
+			dy2 = abs(gray[y-1,x] - gray[y,x])
+			dx1 = abs(gray[y,x+1] - gray[y,x])
+			dx2 = abs(gray[y,x-1] - gray[y,x])
+
+			filtered[y,x] = dy1 * dy2 * dx1 * dx2 / 255
+
+	return filtered
+
 def poolAndIsolationFilter(gray,initialThresh=0.15,iterations=10):
 	filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
 	cv.Copy(gray,filtered)
