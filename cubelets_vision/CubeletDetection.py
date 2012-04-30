@@ -39,6 +39,8 @@ CLEAR = "clear"
 BLUETOOTH = "bluetooth"
 
 THRESHOLDS = {BLACK:0.1, RED:0.1, CLEAR:0.1, BLUETOOTH:0.1}
+EDGETHRESHOLD = .72
+ROTATIONDEGREES = 15
     
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
@@ -652,7 +654,11 @@ def overlayKeyPoints(imgMat, keyPoints, color, offset=(0, 0)):
 def rotateImage(img,center,degrees):
 	# Rotate an image within its frame bounds 
 	# (width and height do not change)
-	rotated = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
+	if (img.channels == 3):
+		rotated = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
+	elif (img.channels == 1):
+		rotated = cv.CreateMat(img.height, img.width, cv.CV_8UC1)
+
 	mapMatrix = cv.CreateMat(2, 3, cv.CV_32FC1)
 	cv.GetRotationMatrix2D(center, degrees, 1, mapMatrix)
 	cv.WarpAffine(img, rotated, mapMatrix)
@@ -873,5 +879,95 @@ def rotationMatchDemo(angles = 6):
 
 
 
+def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE, 
+                       training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS, thresholds=THRESHOLDS):
+    """ match using template match """
+    
+    templateImage = cv.LoadImageM(templateImagePath)
+    templateGray = grayscaleize(templateImage)
+    edgeImage = vhDeltaProductFilter(templateGray)
+    cv.ShowImage("edgeImage", edgeImage)
+    #edgeImage2 = vhDeltaProductFilter(templateGray)
+    #cv.ShowImage("edgeImage2", edgeImage2)
 
+    tree = ET.parse(TRAINING_XML)
+    cubes = tree.findall("image[@name='" + TRAINING_IMAGE_NAME + "']/cube")
+    
+    templates = {}
+    for cube in cubes:
+        color = cube.attrib["color"]
+        x = int(cube.attrib["x"])
+        y = int(cube.attrib["y"])
+        template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC1)
+	counter = 0
+        for i in range(cube_radius*2):
+            for j in range(cube_radius*2):
+                template[i,j] = edgeImage[y+i-cube_radius, x+j-cube_radius]
+        #template = subImage(edgeImage,(x,y),cube_radius)
+	for multiplier in range(90/ROTATIONDEGREES):
+	    rotated = rotateImage(template,(template.height/2,template.width/2),multiplier*ROTATIONDEGREES)
+            #cv.ShowImage("%s %s" % (TEMPLATE_STR, color), rotated)
+            templates[color+str(counter)] = rotated
+	    counter += 1
+            #cv.WaitKey()
+            
+    def getColor(color):
+        if color == BLACK:
+            return (0, 0, 0)
+        elif color == RED:
+            return (0, 0, 255)
+        elif color == CLEAR:
+            return (255,255,255)
+        elif color == BLUETOOTH:
+            return (255, 0, 0)
+        
+    for testImagePath in testImages:
+        preTestImage = cv.LoadImageM(testImagePath)
+	grayTestImage = grayscaleize(preTestImage)
+	testImage = vhDeltaProductFilter(grayTestImage)
+	#testImage = cv.CreateMat(edgeTestImage.height, edgeTestImage.width, cv.CV_32FC1)
+	#cv.CvtColor(edgeImage, testImage, cv.CV_GRAY2BGR)
+        #cv.ShowImage("%s" % (testImagePath), testImage)
+	#cv.WaitKey()
+        results = []
+        rh = 1+testImage.height-cube_radius*2
+        rw = 1+testImage.width-cube_radius*2
+
+	combinedResult = cv.CreateMat(rh, rw, cv.CV_32FC1)
+
+	for i in range(combinedResult.height):
+            for j in range(combinedResult.width):
+                combinedResult[i,j] = 500000000
+
+        for color in templates:
+            result = cv.CreateMat(rh, rw, cv.CV_32FC1)
+            cv.MatchTemplate(testImage, templates[color], result, cv.CV_TM_SQDIFF_NORMED)
+	    #for i in range(result.height):
+            #    for j in range(result.width):
+            #        print result[i,j]
+            minval = 0
+
+	    for i in range(combinedResult.height):
+                for j in range(combinedResult.width):	    
+	            if result[i,j] < combinedResult[i,j]:
+		        combinedResult[i,j] = result[i,j]
+
+        (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
+
+        while minval < EDGETHRESHOLD:
+            #cv.ShowImage("%s %s combined results" % (testImagePath, RESULT_IMAGE), combinedResult)
+	    #cv.WaitKey()
+	    print minval                        
+            results += [(min_x + cube_radius, min_y + cube_radius)]
+            cv.Circle(combinedResult, (min_x, min_y), cube_radius*2, maxval, -1)
+            (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
+	    
+        
+        combinedResults = cv.CloneMat(testImage)
+        print len(results)
+        for p in results:
+            cv.Circle(preTestImage, p, cube_radius, getColor(CLEAR))
+        cv.ShowImage("%s %s" % (testImagePath, COMBINED_RESULTS), preTestImage)
+        #cv.WaitKey()
+    cv.WaitKey()
 
