@@ -42,6 +42,23 @@ THRESHOLDS = {BLACK:0.1, RED:0.1, CLEAR:0.1, BLUETOOTH:0.1}
     
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
+DEPTH_PATH = "images/test/1_depth.png"
+
+def checkImage(path=DEPTH_PATH):
+    """ check that an image has data """
+    img = cv.LoadImageM(path, cv.CV_LOAD_IMAGE_GRAYSCALE)
+    (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(img)
+    print minval, maxval
+    
+def falseColorImage(path=DEPTH_PATH, scale=1):
+    img = cv.LoadImageM(path, cv.CV_LOAD_IMAGE_GRAYSCALE)
+    falseImg = cv.CreateMat(img.height, img.width, cv.CV_32FC1)
+    for i in range(img.height):
+        for j in range(img.width):
+            falseImg[i,j] = scale * img[i,j]
+    cv.ShowImage("False", falseImg)
+    cv.WaitKey()
+    
 def loadImage(path, typ=cv.CV_LOAD_IMAGE_GRAYSCALE):
     """ load an image """
     return cv.LoadImageM(path, typ)
