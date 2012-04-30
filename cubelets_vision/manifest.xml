@@ -13,7 +13,8 @@
 <depend package="rospy" />
 <depend package="roscpp" />
 <depend package="cv_bridge" />
-<rosdep name="opencv2.3" />
+<rosdep name="opencv2" />
+<rosdep name="sensor_msgs" />
 <rosdep name="python-numpy" />
 
 </package>

@@ -416,8 +416,12 @@ def templateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
                 results[color] += [(min_x + cube_radius, min_y + cube_radius)]
                 cv.Circle(result, (min_x, min_y), cube_radius*2, maxval, -1)
         
+        for color in results:
+            for p in results[color]:
+                pass
+                
         combinedResults = cv.CloneMat(testImage)
-        
+                
         for color in results:
             for p in results[color]:
                     cv.Circle(combinedResults, p, cube_radius, getColor(color))
