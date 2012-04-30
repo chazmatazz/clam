@@ -737,90 +737,119 @@ def avgPointCenter(matchList):
 
 	return (avgx,avgy)
 
+def getTemplateInfo():
+	templateInfoPath = "images/webcam/low-res-white/template_info.xml"
+	tree = ET.parse(templateInfoPath)
+	MASTER_TEMPLATE_NAME = "isolatedTemplates.png"
+	cubes = tree.findall("image[@name='" + MASTER_TEMPLATE_NAME + "']/cube")
+	cubeList = {}
 
-def rotationMatchDemo():
-	targetPath = "images/webcam/low-res-white/13.jpg"
+	for cube in cubes:
+		color = cube.attrib["color"]
+		x = int(cube.attrib["x"])
+		y = int(cube.attrib["y"])
+		r = int(cube.attrib["r"])
+		if (color in cubeList):
+			cubeList[color].append(((x,y),r))
+		else:
+			cubeList[color] = [((x,y),r)]
+
+	return cubeList
+
+def rotationMatchDemo(angles = 6):
+	# Check in 15 degree increments
+	targetPath = "images/webcam/low-res-white/18.jpg"
 	templatePath = "images/webcam/low-res-white/isolatedTemplates.png"
-	templateRadius = 17
-	templateCenter = (271,122)	# Blue Cube
-
 	target = cv.LoadImageM(targetPath, cv.CV_LOAD_IMAGE_COLOR)
 	templateSet = cv.LoadImageM(templatePath, cv.CV_LOAD_IMAGE_COLOR)
 
-	possibleMatches = []
+	markerColor = {'black':(0,0,0),'red':(0,0,255),'clear':(255,255,255),'bluetooth':(255,0,0)}
 
-	angles = 6		# Check in 15 degree increments
-	for i in range(0,angles):
-		# Create Rotated Template
-		degrees = i*(90/angles)
-		rotated = rotateImage(templateSet,templateCenter,degrees)
-		#cv.ShowImage('templater'+str(i),rotated)
-		template = subImage(rotated,templateCenter,templateRadius)
-		#cv.ShowImage('template'+str(i),template)
+	# Test over a set of example images
+	cubeList = getTemplateInfo()
+	for cubeType in cubeList:
+		print "Cube Type: ",cubeType
+		possibleMatches = []
+		for (templateCenter,templateRadius) in cubeList[cubeType]:
+#	for templateCenter in templateCenters:
+			# For each example image, test several rotations
+			for i in range(0,angles):
+				# Create Rotated Template
+				degrees = i*(90/angles)
+				rotated = rotateImage(templateSet,templateCenter,degrees)
+				#cv.ShowImage('templater'+str(i),rotated)
+				template = subImage(rotated,templateCenter,templateRadius)
+				#cv.ShowImage('template'+str(i),template)
 
-		# Establish Offset Parameters
-		rh = 1+target.height-template.height
-		rw = 1+target.width-template.width
-		offsetX = target.width-rw
-		offsetY = target.height-rh
+				# Establish Offset Parameters
+				rh = 1+target.height-template.height
+				rw = 1+target.width-template.width
+				offsetX = target.width-rw
+				offsetY = target.height-rh
 
-		# Perform Matching
-		result = cv.CreateMat(rh, rw, cv.CV_32FC1)
-		cv.MatchTemplate(target, template, result, cv.CV_TM_SQDIFF_NORMED)
+				# Perform Matching
+				result = cv.CreateMat(rh, rw, cv.CV_32FC1)
+				cv.MatchTemplate(target, template, result, cv.CV_TM_SQDIFF_NORMED)
 
-		# Locate Points of Best Match
-		resultList = []
-		for y in range(0,result.height):
-			for x in range(0,result.width):
-				resultList.append((result[y,x],(x,y)))
+				# Locate Points of Best Match
+				resultList = []
+				for y in range(0,result.height):
+					for x in range(0,result.width):
+						resultList.append((result[y,x],(x,y)))
 
-		sortedResults = sorted(resultList, key=lambda point: point[0])
-		for j in range(0,10):
-			#print sortedResults[j], sortedResults[0][0]/sortedResults[j][0]
-			# Collect and mark possible matches
-			# Consider a possible match if the match is within 90% of the best match
-			# NOTE: Need to add threshold on best match to determine if
-			# there are no matches in the image.
-			if (sortedResults[0][0]/sortedResults[j][0] > 0.9):
-				cv.Circle(result, sortedResults[j][1], 3, 255)
-				possibleMatches.append(sortedResults[j])
-		cv.ShowImage("result"+str(i),result)
-
-	# Cluster based on distance
-	clusters = [[]]
-	cubeRadius = 15
-	for match in possibleMatches:
-		k = 0
-		foundCluster = 0
-		while (k < len(clusters))&(foundCluster == 0):
-			if (len(clusters[k]) == 0):
-				clusters[k].append(match)
-				foundCluster = 1
-			else:
-				clusterCenter = avgPointCenter(clusters[k])
-				if (pixelDist(clusterCenter,match[1]) < cubeRadius):
+				sortedResults = sorted(resultList, key=lambda point: point[0])
+				for j in range(0,10):
+					#print sortedResults[j], sortedResults[0][0]/sortedResults[j][0]
+					# Collect and mark possible matches
+					# Consider a possible match it is within 90% of the best match
+					# NOTE: Need to add threshold on best match to determine if
+					# there are no matches in the image.
+					if (sortedResults[0][0]/sortedResults[j][0] > 0.9):
+						cv.Circle(result, sortedResults[j][1], 3, 255)
+						possibleMatches.append(sortedResults[j])
+				# Show Match level for each rotation
+				#cv.ShowImage("result"+str(i),result)
+			#
+		# Cluster based on distance
+		clusters = [[]]
+		cubeRadius = 15
+		for match in possibleMatches:
+			k = 0
+			foundCluster = 0
+			while (k < len(clusters))&(foundCluster == 0):
+				if (len(clusters[k]) == 0):
 					clusters[k].append(match)
 					foundCluster = 1
-			k += 1
-		if (foundCluster == 0):
-			clusters.append([match])
+				else:
+					clusterCenter = avgPointCenter(clusters[k])
+					if (pixelDist(clusterCenter,match[1]) < cubeRadius):
+						clusters[k].append(match)
+						foundCluster = 1
+				k += 1
+			if (foundCluster == 0):
+				clusters.append([match])
 
-	# Calculate the center of each cluster, offset to match the center of the template
-	clusterCenters = []
-	for cluster in clusters:
-		center = avgPointCenter(cluster)
-		center = (center[0] + templateRadius,center[1] + templateRadius)
+		# Calculate the center of each cluster, 
+		# offset to match the center of the template
+		clusterCenters = []
+		for cluster in clusters:
+			center = avgPointCenter(cluster)
+			center = (center[0] + templateRadius,center[1] + templateRadius)
 
-		clusterCenters.append(center)
+			clusterCenters.append(center)
 
-	# Mark the matches on the target image
-	target = cv.LoadImageM(targetPath, cv.CV_LOAD_IMAGE_COLOR)
-	for center in clusterCenters:
-		color = (255,0,0) #randColorTriplet()
-		cv.Circle(target,center,templateRadius,color)
+		# Mark the matches on the target image
+		print "Marking Cube Type: ",cubeType
+		print "Matches: ", len(clusterCenters)
+		for center in clusterCenters:
+			color = markerColor[cubeType]
+			cv.Circle(target,center,templateRadius,color)
+
+
 	cv.ShowImage("clusters",target)
 
 	cv.WaitKey()
+
 
 
 
