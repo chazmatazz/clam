@@ -878,7 +878,6 @@ def rotationMatchDemo(angles = 6):
 	cv.WaitKey()
 
 
-
 def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE, 
                        training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS, thresholds=THRESHOLDS):
     """ match using template match """
@@ -887,8 +886,6 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
     templateGray = grayscaleize(templateImage)
     edgeImage = vhDeltaProductFilter(templateGray)
     cv.ShowImage("edgeImage", edgeImage)
-    #edgeImage2 = vhDeltaProductFilter(templateGray)
-    #cv.ShowImage("edgeImage2", edgeImage2)
 
     tree = ET.parse(TRAINING_XML)
     cubes = tree.findall("image[@name='" + TRAINING_IMAGE_NAME + "']/cube")
@@ -899,17 +896,19 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
         x = int(cube.attrib["x"])
         y = int(cube.attrib["y"])
         template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC1)
-	counter = 0
+        counter = 0
+        # Take the sub image
         for i in range(cube_radius*2):
             for j in range(cube_radius*2):
                 template[i,j] = edgeImage[y+i-cube_radius, x+j-cube_radius]
-        #template = subImage(edgeImage,(x,y),cube_radius)
-	for multiplier in range(90/ROTATIONDEGREES):
-	    rotated = rotateImage(template,(template.height/2,template.width/2),multiplier*ROTATIONDEGREES)
-            #cv.ShowImage("%s %s" % (TEMPLATE_STR, color), rotated)
+        # Rotate the sub image and save it
+        for multiplier in range(90/ROTATIONDEGREES):
+            ry = template.height/2
+            rx = template.width/2
+            rotated = rotateImage(template,(ry,rx),multiplier*ROTATIONDEGREES)
+
             templates[color+str(counter)] = rotated
-	    counter += 1
-            #cv.WaitKey()
+            counter += 1
             
     def getColor(color):
         if color == BLACK:
@@ -923,51 +922,50 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
         
     for testImagePath in testImages:
         preTestImage = cv.LoadImageM(testImagePath)
-	grayTestImage = grayscaleize(preTestImage)
-	testImage = vhDeltaProductFilter(grayTestImage)
-	#testImage = cv.CreateMat(edgeTestImage.height, edgeTestImage.width, cv.CV_32FC1)
-	#cv.CvtColor(edgeImage, testImage, cv.CV_GRAY2BGR)
+        grayTestImage = grayscaleize(preTestImage)
+
+        testImage = vhDeltaProductFilter(grayTestImage)
+
+        #cv.CvtColor(edgeImage, testImage, cv.CV_GRAY2BGR)
         #cv.ShowImage("%s" % (testImagePath), testImage)
-	#cv.WaitKey()
+        #cv.WaitKey()
+
         results = []
         rh = 1+testImage.height-cube_radius*2
         rw = 1+testImage.width-cube_radius*2
 
-	combinedResult = cv.CreateMat(rh, rw, cv.CV_32FC1)
+        combinedResult = cv.CreateMat(rh, rw, cv.CV_32FC1)
 
-	for i in range(combinedResult.height):
-            for j in range(combinedResult.width):
-                combinedResult[i,j] = 500000000
+#        for i in range(combinedResult.height):
+#            for j in range(combinedResult.width):
+#                combinedResult[i,j] = 500000000
+        cv.Set(combinedResult,500000000)
 
         for color in templates:
             result = cv.CreateMat(rh, rw, cv.CV_32FC1)
             cv.MatchTemplate(testImage, templates[color], result, cv.CV_TM_SQDIFF_NORMED)
-	    #for i in range(result.height):
-            #    for j in range(result.width):
-            #        print result[i,j]
-            minval = 0
 
-	    for i in range(combinedResult.height):
+            minval = 0
+            for i in range(combinedResult.height):
                 for j in range(combinedResult.width):	    
-	            if result[i,j] < combinedResult[i,j]:
-		        combinedResult[i,j] = result[i,j]
+                    if result[i,j] < combinedResult[i,j]:
+                        combinedResult[i,j] = result[i,j]
 
         (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
 
         while minval < EDGETHRESHOLD:
             #cv.ShowImage("%s %s combined results" % (testImagePath, RESULT_IMAGE), combinedResult)
-	    #cv.WaitKey()
-	    print minval                        
+            #cv.WaitKey()
+            print minval                        
             results += [(min_x + cube_radius, min_y + cube_radius)]
             cv.Circle(combinedResult, (min_x, min_y), cube_radius*2, maxval, -1)
             (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
 	    
-        
         combinedResults = cv.CloneMat(testImage)
-        print len(results)
+        
         for p in results:
             cv.Circle(preTestImage, p, cube_radius, getColor(CLEAR))
         cv.ShowImage("%s %s" % (testImagePath, COMBINED_RESULTS), preTestImage)
-        #cv.WaitKey()
-    cv.WaitKey()
+    print len(results)
 
+    cv.WaitKey()
