@@ -877,7 +877,6 @@ def rotationMatchDemo(angles = 6):
 
 	cv.WaitKey()
 
-
 def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE, 
                        training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS, thresholds=THRESHOLDS):
     """ match using template match """
@@ -891,12 +890,15 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
     cubes = tree.findall("image[@name='" + TRAINING_IMAGE_NAME + "']/cube")
     
     templates = {}
+    templateColors = {}
     for cube in cubes:
         color = cube.attrib["color"]
         x = int(cube.attrib["x"])
         y = int(cube.attrib["y"])
         template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC1)
         counter = 0
+        # Save the average color of the template cube
+        templateColors[color] = avgColor(templateImage,(x,y),cube_radius)
         # Take the sub image
         for i in range(cube_radius*2):
             for j in range(cube_radius*2):
@@ -964,8 +966,45 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
         combinedResults = cv.CloneMat(testImage)
         
         for p in results:
+            cubeColor = avgColor(preTestImage, p, cube_radius)
+            # Match the color to the given template cubes
+            minDist = ()
+            likeliestColor = ""
+            for color in templateColors:
+                diff = colorDist(cubeColor,templateColors[color])
+                print templateColors[color], diff
+                if diff < minDist:
+                    minDist = diff
+                    likeliestColor = color
+            cv.Circle(preTestImage, p, 6, getColor(likeliestColor),-1)
+            cv.Circle(preTestImage, p, 6, (255,255,255))
             cv.Circle(preTestImage, p, cube_radius, getColor(CLEAR))
+
         cv.ShowImage("%s %s" % (testImagePath, COMBINED_RESULTS), preTestImage)
     print len(results)
 
     cv.WaitKey()
+
+def avgColor(img,center,radius):
+    # Find the average color in a subsquare of a color image (8UC3)
+    (x,y) = center
+    rgb = [0,0,0]
+    for i in range(radius*2):
+        for j in range(radius*2):
+            rgb[0] = rgb[0] + img[y+i-radius, x+j-radius][0]
+            rgb[1] = rgb[1] + img[y+i-radius, x+j-radius][1]
+            rgb[2] = rgb[2] + img[y+i-radius, x+j-radius][2]
+    rgb[0] = rgb[0] / (4*radius*radius)
+    rgb[1] = rgb[1] / (4*radius*radius)
+    rgb[2] = rgb[2] / (4*radius*radius)
+
+    return rgb
+
+def colorDist(rgb1,rgb2):
+    # Calculate the distance between two colors (also works for hsv)
+    dr = rgb1[0] - rgb2[0]
+    dg = rgb1[1] - rgb2[1]
+    db = rgb1[2] - rgb2[2]
+
+    dist = math.sqrt(dr*dr + dg*dg + db*db)
+    return dist
