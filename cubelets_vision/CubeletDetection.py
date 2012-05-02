@@ -964,7 +964,9 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
             (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
 	    
         combinedResults = cv.CloneMat(testImage)
-        
+
+        # Find line segments in the original grayscale image
+        lines = findLineSegments(templateGray)
         for p in results:
             cubeColor = avgColor(preTestImage, p, cube_radius)
             # Match the color to the given template cubes
@@ -980,10 +982,66 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
             cv.Circle(preTestImage, p, 6, (255,255,255))
             cv.Circle(preTestImage, p, cube_radius, getColor(CLEAR))
 
+            # Find the rotation of the cube, mark on image
+            angle = findRotation(lines,p,cube_radius)
+            if (angle == None):
+                print "Cannot determine angle for cube at: ",p," due to lack of lines in proximity."
+            else:
+                cv.Line(preTestImage, p, (int(p[0]+cube_radius*numpy.cos(angle)), int(p[1]+cube_radius*numpy.sin(angle))), (255,255,255))
         cv.ShowImage("%s %s" % (testImagePath, COMBINED_RESULTS), preTestImage)
     print len(results)
 
     cv.WaitKey()
+
+
+def findRotation(lines,point,radius):
+    # Finds the avg (angle % pi/2) of lines within one radius of the point
+    angles = []
+    for line in lines:
+        if (point2LineDist(point,line[0], line[1]) <= radius):
+            if line[0][1] < line[1][1]:
+                (x1,y1) = line[0]
+                (x2,y2) = line[1]
+            else:
+                (x1,y1) = line[1]
+                (x2,y2) = line[0]
+            angle = math.atan2(y2-y1,x2-x1)
+            angle = angle % (math.pi / 2)
+            angles.append(angle)
+    if len(angles) > 0:
+        angle = float(sum(angles)) / len(angles)
+    else:
+        angle = None
+    return angle
+
+def findLineSegments(gray):
+    dst = cv.CreateImage(cv.GetSize(gray), 8, 1)
+    color_dst = cv.CreateImage(cv.GetSize(gray), 8, 3)
+    storage = cv.CreateMemStorage(0)
+    lines = 0
+    cv.Canny(gray, dst, 50, 200, 3)
+
+    cv.CvtColor(dst, color_dst, cv.CV_GRAY2BGR)
+
+    lines = cv.HoughLines2(dst, storage, cv.CV_HOUGH_PROBABILISTIC, 1, math.pi / 180, 50, 30, 15)
+
+    for line in lines:
+        cv.Line(color_dst, line[0], line[1], cv.CV_RGB(255, 0, 0), 1, 8)
+
+    cv.ShowImage("Source", gray)
+    cv.ShowImage("Hough", color_dst)
+
+    return lines
+
+def point2LineDist(p0,p1,p2):
+	# Finds the distance between a point p0 and a line connecting p1 and p2
+	(x0,y0) = p0
+	(x1,y1) = p1
+	(x2,y2) = p2
+	top = abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))
+	bot = math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
+	dist = top / bot
+	return dist
 
 def avgColor(img,center,radius):
     # Find the average color in a subsquare of a color image (8UC3)
