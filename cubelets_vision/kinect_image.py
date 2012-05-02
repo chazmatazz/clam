@@ -10,17 +10,17 @@ from cv_bridge import CvBridge, CvBridgeError
 import threading
 import time
 import os
-        
+import CubeletDetection
+
 class image_converter:
     """ provides color and depth images """
     def __init__(self, dir):
         self.bridge = CvBridge()
         self.image_sub_color = rospy.Subscriber("/camera/rgb/image_color", Image, self.color_callback)
-        self.image_sub_depth = rospy.Subscriber("/camera/depth/image", Image, self.depth_callback)
+        self.image_sub_depth = rospy.Subscriber("/camera/depth/image_raw", Image, self.depth_callback)
         self.images_dir = "./images/%s" % dir
         if not os.path.isdir(self.images_dir):
             os.makedirs(self.images_dir)
-        
         self.color_image = None
         self.depth_image = None
         
@@ -32,16 +32,23 @@ class image_converter:
 
     def depth_callback(self, data):
         try:
-            self.depth_image = self.bridge.imgmsg_to_cv(data, "mono8")
+            self.mono16 = self.bridge.imgmsg_to_cv(data, "mono16")
         except CvBridgeError, e:
             print e
-            
+    
     def save(self, count):
         cv.SaveImage("%s/%s_color.png" % (self.images_dir, count), self.color_image)
-        cv.SaveImage("%s/%s_depth.png" % (self.images_dir, count), self.depth_image)
+        
+        my_mono16 = cv.CloneMat(self.mono16)
+        depth_image = cv.CreateMat(my_mono16.height, my_mono16.width, cv.CV_8UC3)
+        for i in range(my_mono16.height):
+            for j in range(my_mono16.width):
+                depth_image[i,j] = (my_mono16[i,j] / (1 << 8), my_mono16[i,j] % (1 << 8), 0)
+            
+        cv.SaveImage("%s/%s_depth.png" % (self.images_dir, count), depth_image)
 
     def ready(self):
-        return self.color_image and self.depth_image
+        return self.color_image and self.mono16
     
 class ImageConverterThread(threading.Thread):
     """ listens to ros messages """

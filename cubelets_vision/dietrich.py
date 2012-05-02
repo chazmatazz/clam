@@ -3,5 +3,5 @@ import CubeletDetection
 
 #CubeletDetection.surfMatch()
 #CubeletDetection.templateMatch()
-#CubeletDetection.falseColorImage()
-CubeletDetection.edgeTemplateMatch()
+CubeletDetection.falseColorImage()
+#CubeletDetection.edgeTemplateMatch()

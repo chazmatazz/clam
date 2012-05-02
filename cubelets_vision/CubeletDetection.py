@@ -44,22 +44,34 @@ ROTATIONDEGREES = 15
     
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
-DEPTH_PATH = "images/test/1_depth.png"
+DEPTH_PATH = "images/kinect/1_depth.png"
 
+def print_buckets(img):
+    buckets = {}
+    for i in range(img.height):
+        for j in range(img.width):
+            k = img[i,j]
+            if not buckets.has_key(k):
+                buckets[k] = 0
+            buckets[k] += 1
+            
+    for c in buckets:
+        print c, buckets[c]
+    
 def checkImage(path=DEPTH_PATH):
     """ check that an image has data """
     img = cv.LoadImageM(path, cv.CV_LOAD_IMAGE_GRAYSCALE)
     (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(img)
     print minval, maxval
     
-def falseColorImage(path=DEPTH_PATH, scale=1):
-    img = cv.LoadImageM(path, cv.CV_LOAD_IMAGE_GRAYSCALE)
-    falseImg = cv.CreateMat(img.height, img.width, cv.CV_32FC1)
-    for i in range(img.height):
-        for j in range(img.width):
-            falseImg[i,j] = scale * img[i,j]
-    cv.ShowImage("False", falseImg)
-    cv.WaitKey()
+def falseColorImage(path=DEPTH_PATH):
+    img = cv.LoadImageM(path)
+    #cv.ShowImage("depth", img)
+    #falseImg = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
+    print_buckets(img)
+            #falseImg[i,j] = img[i,j]
+    #cv.ShowImage("False", falseImg)
+    #cv.WaitKey()
     
 def loadImage(path, typ=cv.CV_LOAD_IMAGE_GRAYSCALE):
     """ load an image """
