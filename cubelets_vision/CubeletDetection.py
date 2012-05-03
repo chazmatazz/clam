@@ -1025,12 +1025,15 @@ def findRotation(lines,point,radius):
                 (x1,y1) = line[1]
                 (x2,y2) = line[0]
 
-            print (x1,y1),(x2,y2)
             theta = math.atan2(y1-y2,x2-x1) % (math.pi / 2.0)
 
-            print "theta ", theta
+            if len(angles) > 0:
+                currAvg = float(sum(angles)) / len(angles)
+                if abs(currAvg - theta) > abs(currAvg - (theta - math.pi/2)):
+                    theta = theta - math.pi/2
+                elif abs(currAvg - theta) > abs(currAvg - (theta + math.pi/2)):
+                    theta = theta + math.pi/2
 
-            #theta = math.atan2(y2-y1,x2-x1) % (math.pi / 2.0)
             angles.append(theta)
     if len(angles) > 0:
         angle = float(sum(angles)) / len(angles)
