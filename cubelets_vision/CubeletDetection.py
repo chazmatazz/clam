@@ -11,10 +11,21 @@ import xml.etree.ElementTree as ET
 #from std_msgs.msg import String
 #from cv_bridge import CvBridge, CvBridgeError
 
+def colorPath(desc):
+    """ from a test image description, return a color image path """
+    (folder, n) = desc
+    return "images/webcam/%s/%s.jpg" % (folder, n)
+
+def depthPath(desc):
+    """ from a test image description, return a depth image path """
+    (folder, n) = desc
+    return "images/%s/%s_depth.png" % (folder, n)
+
+FOLDER = "low-res-white"
 NUM_IMAGES=18
-TEST_IMAGES = ["images/webcam/low-res-white/%d.jpg" % n for n in range(1, NUM_IMAGES+1)]
-TRAINING_IMAGE = TEST_IMAGES[1]
-TEST_IMAGE = TEST_IMAGES[1]
+TEST_IMAGES = [(FOLDER, n) for n in range(1, NUM_IMAGES+1)]
+TRAINING_IMAGE = colorPath(TEST_IMAGES[1])
+TEST_IMAGE = colorPath(TEST_IMAGES[1])
 TRAINING_XML = "images/webcam/low-res-white/truth_values.xml"
 TRAINING_IMAGE_NAME = "2.jpg"
 
@@ -44,35 +55,15 @@ ROTATIONDEGREES = 15
     
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
-DEPTH_PATH = "images/kinect/1_depth.png"
-
-def print_buckets(img):
-    buckets = {}
+def loadDepthImage(path):
+    img = cv.LoadImageM(path)
+    result = cv.CreateMat(img.height, img.width, cv.CV_32FC1)
     for i in range(img.height):
         for j in range(img.width):
-            k = img[i,j]
-            if not buckets.has_key(k):
-                buckets[k] = 0
-            buckets[k] += 1
-            
-    for c in buckets:
-        print c, buckets[c]
-    
-def checkImage(path=DEPTH_PATH):
-    """ check that an image has data """
-    img = cv.LoadImageM(path, cv.CV_LOAD_IMAGE_GRAYSCALE)
-    (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(img)
-    print minval, maxval
-    
-def falseColorImage(path=DEPTH_PATH):
-    img = cv.LoadImageM(path)
-    #cv.ShowImage("depth", img)
-    #falseImg = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
-    print_buckets(img)
-            #falseImg[i,j] = img[i,j]
-    #cv.ShowImage("False", falseImg)
-    #cv.WaitKey()
-    
+            (red, green, blue) = img[i,j]
+            result[i,j] = red * (1 << 8) + green
+    return result
+
 def loadImage(path, typ=cv.CV_LOAD_IMAGE_GRAYSCALE):
     """ load an image """
     return cv.LoadImageM(path, typ)
@@ -419,16 +410,6 @@ def templateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
         # cv.ShowImage("%s %s" % (TEMPLATE_STR, color), template)
         templates[color] = template
             
-    def getColor(color):
-        if color == BLACK:
-            return (0, 0, 0)
-        elif color == RED:
-            return (0, 0, 255)
-        elif color == CLEAR:
-            return (255,255,255)
-        elif color == BLUETOOTH:
-            return (255, 0, 0)
-        
     for testImagePath in testImages:
         testImage = cv.LoadImageM(testImagePath)
         # cv.ShowImage("%s %s" % (testImagePath, TEST_IMAGE), testImage)
@@ -889,80 +870,64 @@ def rotationMatchDemo(angles = 6):
 
 	cv.WaitKey()
 
-
-
-def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE, 
-                       training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS, thresholds=THRESHOLDS):
-    """ match using template match """
+class EdgeTemplate:
+    """ creates an edge template """
+    def __init__(self, templateImagePath, training_xml, training_image_name, cube_radius, 
+                 rotation_degrees, edge_threshold):
+        """ create the template """
+        self.cube_radius = cube_radius
+        self.edge_threshold = edge_threshold
+        
+        templateImage = cv.LoadImageM(templateImagePath)
+        templateGray = cv.CreateMat(templateImage.height, templateImage.width, cv.CV_8UC1)
+        cv.CvtColor(templateImage, templateGray, cv.CV_BGR2GRAY)
+        edgeImage = vhDeltaProductFilter(templateGray)
     
-    templateImage = cv.LoadImageM(templateImagePath)
-    templateGray = grayscaleize(templateImage)
-    edgeImage = vhDeltaProductFilter(templateGray)
-    cv.ShowImage("edgeImage", edgeImage)
-
-    tree = ET.parse(TRAINING_XML)
-    cubes = tree.findall("image[@name='" + TRAINING_IMAGE_NAME + "']/cube")
+        tree = ET.parse(training_xml)
+        cubes = tree.findall("image[@name='" + training_image_name + "']/cube")
+        
+        self.templates = {}
+        self.templateColors = {}
+        for cube in cubes:
+            color = cube.attrib["color"]
+            x = int(cube.attrib["x"])
+            y = int(cube.attrib["y"])
+            template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC1)
+            counter = 0
+            # Save the average color of the template cube
+            self.templateColors[color] = avgColor(templateImage,(x,y),cube_radius)
+            # Take the sub image
+            for i in range(cube_radius*2):
+                for j in range(cube_radius*2):
+                    template[i,j] = edgeImage[y+i-cube_radius, x+j-cube_radius]
+            # Rotate the sub image and save it
+            for multiplier in range(90/rotation_degrees):
+                ry = template.height/2
+                rx = template.width/2
+                rotated = rotateImage(template,(ry,rx),multiplier*rotation_degrees)
     
-    templates = {}
-    templateColors = {}
-    for cube in cubes:
-        color = cube.attrib["color"]
-        x = int(cube.attrib["x"])
-        y = int(cube.attrib["y"])
-        template = cv.CreateMat(cube_radius*2, cube_radius*2, cv.CV_8UC1)
-        counter = 0
-        # Save the average color of the template cube
-        templateColors[color] = avgColor(templateImage,(x,y),cube_radius)
-        # Take the sub image
-        for i in range(cube_radius*2):
-            for j in range(cube_radius*2):
-                template[i,j] = edgeImage[y+i-cube_radius, x+j-cube_radius]
-        # Rotate the sub image and save it
-        for multiplier in range(90/ROTATIONDEGREES):
-            ry = template.height/2
-            rx = template.width/2
-            rotated = rotateImage(template,(ry,rx),multiplier*ROTATIONDEGREES)
-
-            templates[color+str(counter)] = rotated
-            counter += 1
-            
-    def getColor(color):
-        if color == BLACK:
-            return (0, 0, 0)
-        elif color == RED:
-            return (0, 0, 255)
-        elif color == CLEAR:
-            return (255,255,255)
-        elif color == BLUETOOTH:
-            return (255, 0, 0)
-    count = 0
-    for testImagePath in testImages:
-        count += 1
-        preTestImage = cv.LoadImageM(testImagePath)
-        grayTestImage = grayscaleize(preTestImage)
+                self.templates[color+str(counter)] = rotated
+                counter += 1
+    
+    def matchTemplate(self, img):
+        """ match an image to the template """
+        grayTestImage = cv.CreateMat(img.height, img.width, cv.CV_8UC1)
+        cv.CvtColor(img, grayTestImage, cv.CV_BGR2GRAY)
 
         testImage = vhDeltaProductFilter(grayTestImage)
 
-        #cv.CvtColor(edgeImage, testImage, cv.CV_GRAY2BGR)
-        #cv.ShowImage("%s" % (testImagePath), testImage)
-        #cv.WaitKey()
-
         results = []
-        rh = 1+testImage.height-cube_radius*2
-        rw = 1+testImage.width-cube_radius*2
+        rh = 1+testImage.height-self.cube_radius*2
+        rw = 1+testImage.width-self.cube_radius*2
 
         combinedResult = cv.CreateMat(rh, rw, cv.CV_32FC1)
 
-#        for i in range(combinedResult.height):
-#            for j in range(combinedResult.width):
-#                combinedResult[i,j] = 500000000
         cv.Set(combinedResult,500000000)
 
-        for color in templates:
+        for color in self.templates:
             result = cv.CreateMat(rh, rw, cv.CV_32FC1)
-            cv.MatchTemplate(testImage, templates[color], result, cv.CV_TM_SQDIFF_NORMED)
+            cv.MatchTemplate(testImage, self.templates[color], result, cv.CV_TM_SQDIFF_NORMED)
 
-            minval = 0
             for i in range(combinedResult.height):
                 for j in range(combinedResult.width):	    
                     if result[i,j] < combinedResult[i,j]:
@@ -970,50 +935,71 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
 
         (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
 
-        while minval < EDGETHRESHOLD:
-            #cv.ShowImage("%s %s combined results" % (testImagePath, RESULT_IMAGE), combinedResult)
-            #cv.WaitKey()
-            print minval                        
-            results += [(min_x + cube_radius, min_y + cube_radius)]
-            cv.Circle(combinedResult, (min_x, min_y), cube_radius*2, maxval, -1)
+        while minval < self.edge_threshold:                    
+            results += [(min_x + self.cube_radius, min_y + self.cube_radius)]
+            # draw the exclusion circle
+            cv.Circle(combinedResult, (min_x, min_y), self.cube_radius*2, maxval, -1)
             (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
-	    
-        combinedResults = cv.CloneMat(testImage)
 
         # Find line segments in the original grayscale image
-        grayTestImage = cv.LoadImage(testImagePath, cv.CV_LOAD_IMAGE_GRAYSCALE)
         lines = findLineSegments(grayTestImage)
+        ret = []
         for p in results:
-            cubeColor = avgColor(preTestImage, p, cube_radius)
+            (x,y) = p
+            cubeColor = avgColor(img, p, self.cube_radius)
             # Match the color to the given template cubes
             minDist = ()
             likeliestColor = ""
-            for color in templateColors:
-                diff = colorDist(cubeColor,templateColors[color])
-                #print templateColors[color], diff
+            for c in self.templateColors:
+                diff = colorDist(cubeColor,self.templateColors[c])
                 if diff < minDist:
                     minDist = diff
-                    likeliestColor = color
-            cv.Circle(preTestImage, p, 6, getColor(likeliestColor),-1)
-            cv.Circle(preTestImage, p, 6, (255,255,255))
-            cv.Circle(preTestImage, p, cube_radius, getColor(CLEAR))
-
-            # Find the rotation of the cube, mark on image
-            angle = findRotation(lines,p,cube_radius*1.5)
-            if (angle == None):
-                print "Cannot determine angle for cube at: ",p," due to lack of lines in proximity."
-            else:
-                cv.Line(preTestImage, p, (int(p[0]+cube_radius*numpy.cos(angle)), int(p[1]-cube_radius*numpy.sin(angle))), (255,255,255))
-
-        cv.ShowImage("%s %s" % (testImagePath, COMBINED_RESULTS), preTestImage)
-        cv.SaveImage("images/report images/results/%s.jpg" % (count),preTestImage)
-    print len(results)
-
+                    color = c
+            # Find the rotation of the cube
+            angle = findRotation(lines,p,self.cube_radius*1.5)
+            ret += [(x, y, angle, color)]
+        
+        return ret
+    
+def edgeTemplateMatch(test_images=TEST_IMAGES, templateImagePath=TRAINING_IMAGE, training_xml=TRAINING_XML, 
+                 training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS, 
+                 rotation_degrees=ROTATIONDEGREES, edge_threshold=EDGETHRESHOLD):
+    """ match a set of images to a template """
+    et = EdgeTemplate(templateImagePath, training_xml, training_image_name, cube_radius, rotation_degrees, edge_threshold)
+    for desc in test_images:
+        img = cv.LoadImageM(colorPath(desc))
+        drawMatch(et, img, et.matchTemplate(img))
+        (folder, n) = desc
+        cv.ShowImage("%s %s %s" % (folder, n, COMBINED_RESULTS), img)
+        # cv.SaveImage("images/report images/results/%s/%s.png" % desc, img)
+    
     cv.WaitKey()
 
+def getColor(color):
+    if color == BLACK:
+        return (0, 0, 0)
+    elif color == RED:
+        return (0, 0, 255)
+    elif color == CLEAR:
+        return (255,255,255)
+    elif color == BLUETOOTH:
+        return (255, 0, 0)
+        
+def drawMatch(edge_template, img, matches):
+    """ create a match image """
+    white = (255, 255, 255)
+    dia = 6
+    for match in matches:
+        (x, y, angle, color) = match
+        p = (x, y)
+        cv.Circle(img, p, dia, getColor(color),-1)
+        cv.Circle(img, p, dia, white)
+        cv.Circle(img, p, edge_template.cube_radius, white)
+        if angle:
+            cv.Line(img, p, (int(x+edge_template.cube_radius*numpy.cos(angle)), int(y-edge_template.cube_radius*numpy.sin(angle))), white)            
+                
 def findRotation(lines,point,radius):
-    # Finds the avg (angle % pi/2) of lines within one radius of the point
-    print "point: ",point
+    """ Finds the avg (angle % pi/2) of lines within one radius of the point """
     angles = []
     for line in lines:
         isNearby = (pixelDist(point,line[0]) < 2*radius)|(pixelDist(point,line[1]) < 2*radius)
