@@ -1,5 +1,5 @@
-<truth-values camera="low-res" height="71">
-<image name="2.jpg">
+<truth-values camera="low-res" cube_radius="20">
+<image id="2">
     <cube color="black" z-index="1" x="582" y="110"/>
     <cube color="red" z-index="1" x="352" y="44"/>
     <cube color="clear" z-index="1" x="379" y="214" />

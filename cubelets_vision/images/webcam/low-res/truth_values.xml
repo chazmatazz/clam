@@ -1,7 +1,0 @@
-<truth-values camera="low-res" height="71">
-<image name="1.jpg">
-    <cube color="black" z-index="1" x="270" y="226"/>
-    <cube color="red" z-index="1" x="436" y="159"/>
-    <cube color="clear" z-index="1" x="426" y="301" />
-</image>
-</truth-values>
