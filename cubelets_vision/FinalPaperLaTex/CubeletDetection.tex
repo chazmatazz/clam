@@ -265,7 +265,7 @@
 
 
 %\usepackage[caption=false]{caption}
-%\usepackage[font=footnotesize]{subfig}
+\usepackage[font=footnotesize]{subfig}
 % subfig.sty, also written by Steven Douglas Cochran, is the modern
 % replacement for subfigure.sty. However, subfig.sty requires and
 % automatically loads Axel Sommerfeldt's caption.sty which will override
@@ -515,9 +515,10 @@ If successful, this would provide a simple method for detecting and localizing t
 \section{Matters and Materials}
 To accomplish our goals, we have leveraged the capabilities of the OpenCV computer vision library, specifically the python 2.1 bindings.  In order to make the scope of this problem more manageable, we are also restricting the setup of the camera and depth sensor to being fixed in an overhead view above the cubelet work area.
 
-\subsection{Methods}
-To manage the information related to the templates, we've created a single file with a variety of template images, scaled to approximately the same size.  In addition to this, we have an xml file marking the (x,y) locations of each template cube within the larger image, as well as the idea template radius for that cube.  This is due to the difficulty in properly detecting the clear cubes, which had previously matched very closely to the background table.   Using just the center circular portion of the cube as a template greatly increased the accuracy of the matchings for those cubes.
-\\[6pt]
+\subsection{General Methods}
+To manage the information related to the templates, we've created a single file with a variety of template images, scaled to approximately the same size.  In addition to this, we have an xml file marking the (x,y) locations of each template cube within the larger image, as well as the idea template radius for that cube.  For the actual templates, we use the region around the circlular portion of the cube face.    
+
+\subsection{Edge Enhancement Filter}
 In order to better match the cubes, specifically the clear cubes, we found it necesary to apply a form of edge detection/enhancement to the images. Without doing this, the features of the clear cubes would not be very distinct, making matching of any kind very difficult.  We found the Canny edge detector to be too imprecise; a slight adjustment to the upper and lower edge merge thresholds would change the shape of fine detail edges. Sobel suffered from a different problem in that the edges that it did detect were very weakly enhanced.  In order to improve the edge enhancement, we  wrote our own filter which is very similar to how Sobel operates.  Shown below are examples of sobel and canny run on our test images, as well as the two versions of our edge enhancement filter.  
 \\[6pt]
 [show images] 
@@ -534,23 +535,37 @@ This filter enhances edge boundaries very strongly, but still suffers from a bit
 	f(x,y) = \frac{1}{c} |i(x+1,y) - i(x,y)|  \times |i(x-1,y) - i(x,y)| \times |i(x,y+1) - i(x,y)| \times |i(x,y-1) - i(x,y)| 
 \end{math} 
 \\[6pt]
+
+[ show example images of Canny, Sobel, and our Filters]
+
 Before performing template matching, we apply these filters to the template image and the target image.  Although this removes the  color information, it does allow for the template matching process to detect all cubelets indiscrimitately. 
-\\[6pt]
+
+\subsection{Rotational Template Matching}
 In order to handle the possibility of missing a match due to a rotation, we take each template image, rotate it by 15 degrees, and then template match that rotated version to the target image.  To accomplish the actual template matching, we are using the template matching function built into opencv, cv.MatchTemplate. The particular match value calculation equation is as follows: 
 \\[6pt]
 [show the equation from the opencv python doc]
 \\[6pt]
 The output of this function is a grayscale image with pixel values equal to difference metric between the local window and the template.  To find the matches in the image, we simply look for the minima within that image.
-\\[6pt]
+
 Once we have a list of prospective cube locations, we find the average color around the center of each match, and compare that to the color averages of each template image, selecting the smallest difference as the matching color.
-\\[6pt]
+
+\subsection{Rotation Estimation}
+In order to determine the rotation of each cubes, we find try to utilize the relatively distinct edges of the cube.  We once again start by applying our edge enhancement filter to the test image.  We then blur, dilate, and erode the resulting image in order to merge the edges of each cube into a single connect component.  This is to suppress the internal features of the cube, so that when we apply Canny edge detection to the image, we only get the outlines of the cubes.  Once Canny has been applied, we use OpenCV's hough line detector find the line segments present.  The detector returns lists of line segment endpoints, from which we calculate the rotation of each line segment, modulo $ \frac{\pi}{2}$ .  For each detected cube, we located all the line segments within some radius of the cube center, then average the calculated angles for those line segments, which is assigned as the rotation angle for the cube.
+
+\subsection{Depth Information}
 
 \section{Results}
 \subsection{Match Improvement due to Rotational Matching}
+
 \subsection{Match Improvement due to Edge Enhancement}
+
+\subsection{Accuracy of Color Determination}
+
 \subsection{Accuracy of Rotation Estimation}
 
 \section{Discussion}
+
+The color determination was not quite as accurate as we would have hoped.  This mainly occured with the clear and black cubes, which in dim lighting have somewhat similar colors.  A way to address this would be to instead compare color histograms of the a test image and a cube template.  This would differentiate the black and the clear cubes well, as the black cubes would have a spike in the lower end of the histogram, and the clear cubes would have a more spread out distribution.
 
 \subsection{Further Work}
 The major limitation of our approach is that it requires a fixed overhead view of the scene.  This constraint allowed us to use template matching to find cubelets easily within the scene, limits its usefulness on a robot that can look around in its environment.  Our methods do not work very well if the cubes were to be seen from non-normal angle.  This change in perspective would require us to have a more thorough method of pose estimation.  
@@ -561,7 +576,7 @@ Given a set of matching points between a training image and the target image, we
 
 
 \section{Conclusion}
-The conclusion goes here.
+
 
 \subsection{Subsection Heading Here}
 Subsection text here.
