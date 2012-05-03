@@ -890,6 +890,7 @@ def rotationMatchDemo(angles = 6):
 	cv.WaitKey()
 
 
+
 def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE, 
                        training_xml=TRAINING_XML, training_image_name=TRAINING_IMAGE_NAME, cube_radius=CUBE_RADIUS, thresholds=THRESHOLDS):
     """ match using template match """
@@ -934,8 +935,9 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
             return (255,255,255)
         elif color == BLUETOOTH:
             return (255, 0, 0)
-        
+    count = 0
     for testImagePath in testImages:
+        count += 1
         preTestImage = cv.LoadImageM(testImagePath)
         grayTestImage = grayscaleize(preTestImage)
 
@@ -979,7 +981,7 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
         combinedResults = cv.CloneMat(testImage)
 
         # Find line segments in the original grayscale image
-        grayTestImage = grayscaleize(preTestImage)
+        grayTestImage = cv.LoadImage(testImagePath, cv.CV_LOAD_IMAGE_GRAYSCALE)
         lines = findLineSegments(grayTestImage)
         for p in results:
             cubeColor = avgColor(preTestImage, p, cube_radius)
@@ -997,31 +999,38 @@ def edgeTemplateMatch(testImages=TEST_IMAGES, templateImagePath=TRAINING_IMAGE,
             cv.Circle(preTestImage, p, cube_radius, getColor(CLEAR))
 
             # Find the rotation of the cube, mark on image
-            angle = findRotation(lines,p,cube_radius*1.25)
+            angle = findRotation(lines,p,cube_radius*1.5)
             if (angle == None):
                 print "Cannot determine angle for cube at: ",p," due to lack of lines in proximity."
             else:
-                cv.Line(preTestImage, p, (int(p[0]+cube_radius*numpy.cos(angle)), int(p[1]+cube_radius*numpy.sin(angle))), (255,255,255))
+                cv.Line(preTestImage, p, (int(p[0]+cube_radius*numpy.cos(angle)), int(p[1]-cube_radius*numpy.sin(angle))), (255,255,255))
+
         cv.ShowImage("%s %s" % (testImagePath, COMBINED_RESULTS), preTestImage)
+        cv.SaveImage("images/report images/results/%s.jpg" % (count),preTestImage)
     print len(results)
 
     cv.WaitKey()
-
 
 def findRotation(lines,point,radius):
     # Finds the avg (angle % pi/2) of lines within one radius of the point
     print "point: ",point
     angles = []
     for line in lines:
-        if (point2LineDist(point,line[0], line[1]) <= radius):
-            if line[0][1] < line[1][1]:
+        isNearby = (pixelDist(point,line[0]) < 2*radius)|(pixelDist(point,line[1]) < 2*radius)
+        if (isNearby)&(point2LineDist(point,line[0], line[1]) <= radius):
+            if line[0][0] < line[1][0]:
                 (x1,y1) = line[0]
                 (x2,y2) = line[1]
             else:
                 (x1,y1) = line[1]
                 (x2,y2) = line[0]
-            print y2-y1,x2-x1
-            theta = math.atan2(y2-y1,x2-x1) % (math.pi / 2.0)
+
+            print (x1,y1),(x2,y2)
+            theta = math.atan2(y1-y2,x2-x1) % (math.pi / 2.0)
+
+            print "theta ", theta
+
+            #theta = math.atan2(y2-y1,x2-x1) % (math.pi / 2.0)
             angles.append(theta)
     if len(angles) > 0:
         angle = float(sum(angles)) / len(angles)
@@ -1086,3 +1095,12 @@ def colorDist(rgb1,rgb2):
 
     dist = math.sqrt(dr*dr + dg*dg + db*db)
     return dist
+
+def pixelDist(p1,p2):
+    dx = p1[0] - p2[0]
+    dy = p1[1] - p2[1]
+    d = math.sqrt(dx*dx + dy*dy)
+    return d
+
+
+
