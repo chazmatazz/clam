@@ -56,6 +56,7 @@ ROTATIONDEGREES = 15
 FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
 
 def loadDepthImage(path):
+    """ load a depth image into a mm image """
     img = cv.LoadImageM(path)
     result = cv.CreateMat(img.height, img.width, cv.CV_32FC1)
     for i in range(img.height):
@@ -645,230 +646,229 @@ def overlayKeyPoints(imgMat, keyPoints, color, offset=(0, 0)):
     return overlaid
 
 def rotateImage(img,center,degrees):
-	# Rotate an image within its frame bounds 
-	# (width and height do not change)
-	if (img.channels == 3):
-		rotated = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
-	elif (img.channels == 1):
-		rotated = cv.CreateMat(img.height, img.width, cv.CV_8UC1)
+    # Rotate an image within its frame bounds 
+    # (width and height do not change)
+    if (img.channels == 3):
+        rotated = cv.CreateMat(img.height, img.width, cv.CV_8UC3)
+    elif (img.channels == 1):
+        rotated = cv.CreateMat(img.height, img.width, cv.CV_8UC1)
 
-	mapMatrix = cv.CreateMat(2, 3, cv.CV_32FC1)
-	cv.GetRotationMatrix2D(center, degrees, 1, mapMatrix)
-	cv.WarpAffine(img, rotated, mapMatrix)
+    mapMatrix = cv.CreateMat(2, 3, cv.CV_32FC1)
+    cv.GetRotationMatrix2D(center, degrees, 1, mapMatrix)
+    cv.WarpAffine(img, rotated, mapMatrix)
 
-	return rotated
+    return rotated
 
 def subImage(img,center,radius):
-	# Return a 2r x 2r square of the source image
-	(x,y) = center
-	if (img.channels == 3):
-		square = cv.CreateMat(1 + 2*radius, 1 + 2*radius, cv.CV_8UC3)
-	elif (img.channels == 1):
-		square = cv.CreateMat(1 + 2*radius, 1 + 2*radius, cv.CV_8UFC1)
-	else:
-		# No reason for us to have any other channel count
-		return -1
-	cx = radius + 1
-	cy = radius + 1
-	for i in range(0,2*radius+1):
-		for j in range(0,2*radius+1):
-			square[i,j] = img[y+(i-radius), x+(j-radius)]
-	return square
+    # Return a 2r x 2r square of the source image
+    (x,y) = center
+    if (img.channels == 3):
+        square = cv.CreateMat(1 + 2*radius, 1 + 2*radius, cv.CV_8UC3)
+    elif (img.channels == 1):
+        square = cv.CreateMat(1 + 2*radius, 1 + 2*radius, cv.CV_8UFC1)
+    else:
+        # No reason for us to have any other channel count
+        return -1
+    cx = radius + 1
+    cy = radius + 1
+    for i in range(0,2*radius+1):
+        for j in range(0,2*radius+1):
+            square[i,j] = img[y+(i-radius), x+(j-radius)]
+    return square
 
 
 def vhDeltaProductFilter(gray):
-	# at each pixel, take the difference of values between the pixel above and pixel below,
-	# and multiply it with the difference for the pixels to the left and right.
-	filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
+    """ 
+    at each pixel, take the difference of values between the pixel above and pixel below,
+    and multiply it with the difference for the pixels to the left and right.
+    """
+    edge_kernel = numpy.array([-1.0, 0, 1.0], numpy.float32)
+    id_kernel = numpy.array([0, 1.0, 0], numpy.float32)
+    
+    numpy_gray = numpy.array(gray, numpy.float32)
+    
+    horiz = numpy.zeros((gray.height, gray.width), numpy.float32)
+    vert = numpy.zeros((gray.height, gray.width), numpy.float32)
+    filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
+    
+    horiz = cv2.sepFilter2D(numpy_gray, -1, id_kernel, edge_kernel)
+    vert = cv2.sepFilter2D(numpy_gray, -1, edge_kernel, id_kernel)
+    horiz = numpy.abs(horiz)
+    vert = numpy.abs(vert)
+    cv.Mul(cv.fromarray(horiz), cv.fromarray(vert), filtered)
 
-	margin = 2
-	for y in range(margin/2,gray.height-margin):
-		for x in range(margin/2,gray.width-margin):
-			dy = abs(gray[y+1,x] - gray[y-1,x])
-			dx = abs(gray[y,x-1] - gray[y,x+1])
-#			d3 = abs(gray[y+1,x+1] - gray[y-1,x-1])
-#			d4 = abs(gray[y+1,x-1] - gray[y-1,x+1])
-
-			filtered[y,x] = dy * dx #* d3 * d4
-
-	return filtered
+    return filtered
 
 def vhDeltaProductFilter2(gray):
-	# Take Difference from each direction seperately, and scale down
-	filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
+    # Take Difference from each direction seperately, and scale down
+    filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
 
-	margin = 2
-	for y in range(margin/2,gray.height-margin):
-		for x in range(margin/2,gray.width-margin):
-			dy1 = abs(gray[y+1,x] - gray[y,x])
-			dy2 = abs(gray[y-1,x] - gray[y,x])
-			dx1 = abs(gray[y,x+1] - gray[y,x])
-			dx2 = abs(gray[y,x-1] - gray[y,x])
+    margin = 2
+    for y in range(margin/2,gray.height-margin):
+        for x in range(margin/2,gray.width-margin):
+            dy1 = abs(gray[y+1,x] - gray[y,x])
+            dy2 = abs(gray[y-1,x] - gray[y,x])
+            dx1 = abs(gray[y,x+1] - gray[y,x])
+            dx2 = abs(gray[y,x-1] - gray[y,x])
 
-			filtered[y,x] = dy1 * dy2 * dx1 * dx2 / 255
+            filtered[y,x] = dy1 * dy2 * dx1 * dx2 / 255
 
-	return filtered
+    return filtered
 
 def poolAndIsolationFilter(gray,initialThresh=0.15,iterations=10):
-	filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
-	cv.Copy(gray,filtered)
-	#cv.ShowImage('preErode',filtered)
+    filtered = cv.CreateMat(gray.height, gray.width, cv.CV_8UC1)
+    cv.Copy(gray,filtered)
+    #cv.ShowImage('preErode',filtered)
 
-	# Initial Smooth, Erosion, and Threshold
-	cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
-	for y in range(0,filtered.height):
-		for x in range(0,filtered.width):
-			if (filtered[y,x] < 255*initialThresh):
-				filtered[y,x] = 0
-			else:
-				filtered[y,x] = 255
-	cv.Erode(filtered, filtered, None, 1 );
-	#cv.ShowImage('postErode',filtered)
+    # Initial Smooth, Erosion, and Threshold
+    cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
 
-	# Repeatedly Dilate and Erode to Merge Nearby Bright Spots
-	for i in range(0,iterations):
-		cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
-		cv.Dilate(filtered, filtered, None, 1 )
-		cv.Erode(filtered, filtered, None, 1 )
+    cv.Threshold(filtered, filtered, 255*initialThresh, 255, cv.CV_THRESH_BINARY)
+    
+    
+    cv.Erode(filtered, filtered, None, 1 );
+    #cv.ShowImage('postErode',filtered)
 
-	#cv.ShowImage('postErosionDilation',filtered)
+    # Repeatedly Dilate and Erode to Merge Nearby Bright Spots
+    for i in range(0,iterations):
+        cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
+        cv.Dilate(filtered, filtered, None, 1 )
+        cv.Erode(filtered, filtered, None, 1 )
 
-	# Smooth, Erode and Threshold a final time
-	cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
-	cv.Erode(filtered, filtered, None, 3 );
-	for y in range(0,filtered.height):
-		for x in range(0,filtered.width):
-			if filtered[y,x] > 255.0*0.1:
-				filtered[y,x] = 255
-			else:
-				filtered[y,x] = 0
+    #cv.ShowImage('postErosionDilation',filtered)
 
-	return filtered
+    # Smooth, Erode and Threshold a final time
+    cv.Smooth(filtered, filtered, cv.CV_GAUSSIAN, 5, -1)
+    cv.Erode(filtered, filtered, None, 3 )
+    
+    cv.Threshold(filtered, filtered, 255*0.1, 255, cv.CV_THRESH_BINARY)
+    
+    return filtered
 
 def avgPointCenter(matchList):
-	avgx = 0
-	avgy = 0
-	for match in matchList:
-		avgx += match[1][0]
-		avgy += match[1][1]
+    avgx = 0
+    avgy = 0
+    for match in matchList:
+        avgx += match[1][0]
+        avgy += match[1][1]
 
-	avgx = avgx / len(matchList)
-	avgy = avgy / len(matchList)
+    avgx = avgx / len(matchList)
+    avgy = avgy / len(matchList)
 
-	return (avgx,avgy)
+    return (avgx,avgy)
 
 def getTemplateInfo():
-	templateInfoPath = "images/webcam/low-res-white/template_info.xml"
-	tree = ET.parse(templateInfoPath)
-	MASTER_TEMPLATE_NAME = "isolatedTemplates.png"
-	cubes = tree.findall("image[@name='" + MASTER_TEMPLATE_NAME + "']/cube")
-	cubeList = {}
+    templateInfoPath = "images/webcam/low-res-white/template_info.xml"
+    tree = ET.parse(templateInfoPath)
+    MASTER_TEMPLATE_NAME = "isolatedTemplates.png"
+    cubes = tree.findall("image[@name='" + MASTER_TEMPLATE_NAME + "']/cube")
+    cubeList = {}
 
-	for cube in cubes:
-		color = cube.attrib["color"]
-		x = int(cube.attrib["x"])
-		y = int(cube.attrib["y"])
-		r = int(cube.attrib["r"])
-		if (color in cubeList):
-			cubeList[color].append(((x,y),r))
-		else:
-			cubeList[color] = [((x,y),r)]
+    for cube in cubes:
+        color = cube.attrib["color"]
+        x = int(cube.attrib["x"])
+        y = int(cube.attrib["y"])
+        r = int(cube.attrib["r"])
+        if (color in cubeList):
+            cubeList[color].append(((x,y),r))
+        else:
+            cubeList[color] = [((x,y),r)]
 
-	return cubeList
+    return cubeList
 
 def rotationMatchDemo(angles = 6):
-	# Check in 15 degree increments
-	targetPath = "images/webcam/low-res-white/18.jpg"
-	templatePath = "images/webcam/low-res-white/isolatedTemplates.png"
-	target = cv.LoadImageM(targetPath, cv.CV_LOAD_IMAGE_COLOR)
-	templateSet = cv.LoadImageM(templatePath, cv.CV_LOAD_IMAGE_COLOR)
+    # Check in 15 degree increments
+    targetPath = "images/webcam/low-res-white/18.jpg"
+    templatePath = "images/webcam/low-res-white/isolatedTemplates.png"
+    target = cv.LoadImageM(targetPath, cv.CV_LOAD_IMAGE_COLOR)
+    templateSet = cv.LoadImageM(templatePath, cv.CV_LOAD_IMAGE_COLOR)
 
-	markerColor = {'black':(0,0,0),'red':(0,0,255),'clear':(255,255,255),'bluetooth':(255,0,0)}
+    markerColor = {'black':(0,0,0),'red':(0,0,255),'clear':(255,255,255),'bluetooth':(255,0,0)}
 
-	# Test over a set of example images
-	cubeList = getTemplateInfo()
-	for cubeType in cubeList:
-		print "Cube Type: ",cubeType
-		possibleMatches = []
-		for (templateCenter,templateRadius) in cubeList[cubeType]:
-#	for templateCenter in templateCenters:
-			# For each example image, test several rotations
-			for i in range(0,angles):
-				# Create Rotated Template
-				degrees = i*(90/angles)
-				rotated = rotateImage(templateSet,templateCenter,degrees)
-				#cv.ShowImage('templater'+str(i),rotated)
-				template = subImage(rotated,templateCenter,templateRadius)
-				#cv.ShowImage('template'+str(i),template)
+    # Test over a set of example images
+    cubeList = getTemplateInfo()
+    for cubeType in cubeList:
+        print "Cube Type: ",cubeType
+        possibleMatches = []
+        for (templateCenter,templateRadius) in cubeList[cubeType]:
+#    for templateCenter in templateCenters:
+            # For each example image, test several rotations
+            for i in range(0,angles):
+                # Create Rotated Template
+                degrees = i*(90/angles)
+                rotated = rotateImage(templateSet,templateCenter,degrees)
+                #cv.ShowImage('templater'+str(i),rotated)
+                template = subImage(rotated,templateCenter,templateRadius)
+                #cv.ShowImage('template'+str(i),template)
 
-				# Establish Offset Parameters
-				rh = 1+target.height-template.height
-				rw = 1+target.width-template.width
-				offsetX = target.width-rw
-				offsetY = target.height-rh
+                # Establish Offset Parameters
+                rh = 1+target.height-template.height
+                rw = 1+target.width-template.width
+                offsetX = target.width-rw
+                offsetY = target.height-rh
 
-				# Perform Matching
-				result = cv.CreateMat(rh, rw, cv.CV_32FC1)
-				cv.MatchTemplate(target, template, result, cv.CV_TM_SQDIFF_NORMED)
+                # Perform Matching
+                result = cv.CreateMat(rh, rw, cv.CV_32FC1)
+                cv.MatchTemplate(target, template, result, cv.CV_TM_SQDIFF_NORMED)
 
-				# Locate Points of Best Match
-				resultList = []
-				for y in range(0,result.height):
-					for x in range(0,result.width):
-						resultList.append((result[y,x],(x,y)))
+                # Locate Points of Best Match
+                resultList = []
+                for y in range(0,result.height):
+                    for x in range(0,result.width):
+                        resultList.append((result[y,x],(x,y)))
 
-				sortedResults = sorted(resultList, key=lambda point: point[0])
-				for j in range(0,10):
-					#print sortedResults[j], sortedResults[0][0]/sortedResults[j][0]
-					# Collect and mark possible matches
-					# Consider a possible match it is within 90% of the best match
-					# NOTE: Need to add threshold on best match to determine if
-					# there are no matches in the image.
-					if (sortedResults[0][0]/sortedResults[j][0] > 0.9):
-						cv.Circle(result, sortedResults[j][1], 3, 255)
-						possibleMatches.append(sortedResults[j])
-				# Show Match level for each rotation
-				#cv.ShowImage("result"+str(i),result)
-			#
-		# Cluster based on distance
-		clusters = [[]]
-		cubeRadius = 15
-		for match in possibleMatches:
-			k = 0
-			foundCluster = 0
-			while (k < len(clusters))&(foundCluster == 0):
-				if (len(clusters[k]) == 0):
-					clusters[k].append(match)
-					foundCluster = 1
-				else:
-					clusterCenter = avgPointCenter(clusters[k])
-					if (pixelDist(clusterCenter,match[1]) < cubeRadius):
-						clusters[k].append(match)
-						foundCluster = 1
-				k += 1
-			if (foundCluster == 0):
-				clusters.append([match])
+                sortedResults = sorted(resultList, key=lambda point: point[0])
+                for j in range(0,10):
+                    #print sortedResults[j], sortedResults[0][0]/sortedResults[j][0]
+                    # Collect and mark possible matches
+                    # Consider a possible match it is within 90% of the best match
+                    # NOTE: Need to add threshold on best match to determine if
+                    # there are no matches in the image.
+                    if (sortedResults[0][0]/sortedResults[j][0] > 0.9):
+                        cv.Circle(result, sortedResults[j][1], 3, 255)
+                        possibleMatches.append(sortedResults[j])
+                # Show Match level for each rotation
+                #cv.ShowImage("result"+str(i),result)
+            #
+        # Cluster based on distance
+        clusters = [[]]
+        cubeRadius = 15
+        for match in possibleMatches:
+            k = 0
+            foundCluster = 0
+            while (k < len(clusters))&(foundCluster == 0):
+                if (len(clusters[k]) == 0):
+                    clusters[k].append(match)
+                    foundCluster = 1
+                else:
+                    clusterCenter = avgPointCenter(clusters[k])
+                    if (pixelDist(clusterCenter,match[1]) < cubeRadius):
+                        clusters[k].append(match)
+                        foundCluster = 1
+                k += 1
+            if (foundCluster == 0):
+                clusters.append([match])
 
-		# Calculate the center of each cluster, 
-		# offset to match the center of the template
-		clusterCenters = []
-		for cluster in clusters:
-			center = avgPointCenter(cluster)
-			center = (center[0] + templateRadius,center[1] + templateRadius)
+        # Calculate the center of each cluster, 
+        # offset to match the center of the template
+        clusterCenters = []
+        for cluster in clusters:
+            center = avgPointCenter(cluster)
+            center = (center[0] + templateRadius,center[1] + templateRadius)
 
-			clusterCenters.append(center)
+            clusterCenters.append(center)
 
-		# Mark the matches on the target image
-		print "Marking Cube Type: ",cubeType
-		print "Matches: ", len(clusterCenters)
-		for center in clusterCenters:
-			color = markerColor[cubeType]
-			cv.Circle(target,center,templateRadius,color)
+        # Mark the matches on the target image
+        print "Marking Cube Type: ",cubeType
+        print "Matches: ", len(clusterCenters)
+        for center in clusterCenters:
+            color = markerColor[cubeType]
+            cv.Circle(target,center,templateRadius,color)
 
 
-	cv.ShowImage("clusters",target)
+    cv.ShowImage("clusters",target)
 
-	cv.WaitKey()
+    cv.WaitKey()
 
 class EdgeTemplate:
     """ creates an edge template """
@@ -922,16 +922,17 @@ class EdgeTemplate:
 
         combinedResult = cv.CreateMat(rh, rw, cv.CV_32FC1)
 
-        cv.Set(combinedResult,500000000)
+        first = True
 
         for color in self.templates:
             result = cv.CreateMat(rh, rw, cv.CV_32FC1)
             cv.MatchTemplate(testImage, self.templates[color], result, cv.CV_TM_SQDIFF_NORMED)
+            if first:
+                combinedResult = cv.CloneMat(result)
+            else:
+                cv.Min(result, combinedResult, combinedResult)
 
-            for i in range(combinedResult.height):
-                for j in range(combinedResult.width):	    
-                    if result[i,j] < combinedResult[i,j]:
-                        combinedResult[i,j] = result[i,j]
+            first = False
 
         (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
 
@@ -949,9 +950,9 @@ class EdgeTemplate:
             cubeColor = avgColor(img, p, self.cube_radius)
             # Match the color to the given template cubes
             minDist = ()
-            likeliestColor = ""
+            color = ""
             for c in self.templateColors:
-                diff = colorDist(cubeColor,self.templateColors[c])
+                diff = colorDist(cubeColor, self.templateColors[c])
                 if diff < minDist:
                     minDist = diff
                     color = c
@@ -1046,20 +1047,20 @@ def findLineSegments(gray):
     for line in lines:
         cv.Line(color_dst, line[0], line[1], cv.CV_RGB(255, 0, 0), 1, 8)
 
-    cv.ShowImage("Source", gray)
-    cv.ShowImage("Hough", color_dst)
+    # cv.ShowImage("Source", gray)
+    # cv.ShowImage("Hough", color_dst)
 
     return lines
 
 def point2LineDist(p0,p1,p2):
-	# Finds the distance between a point p0 and a line connecting p1 and p2
-	(x0,y0) = p0
-	(x1,y1) = p1
-	(x2,y2) = p2
-	top = abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))
-	bot = math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
-	dist = top / bot
-	return dist
+    # Finds the distance between a point p0 and a line connecting p1 and p2
+    (x0,y0) = p0
+    (x1,y1) = p1
+    (x2,y2) = p2
+    top = abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))
+    bot = math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
+    dist = top / bot
+    return dist
 
 def avgColor(img,center,radius):
     # Find the average color in a subsquare of a color image (8UC3)
@@ -1090,6 +1091,3 @@ def pixelDist(p1,p2):
     dy = p1[1] - p2[1]
     d = math.sqrt(dx*dx + dy*dy)
     return d
-
-
-
