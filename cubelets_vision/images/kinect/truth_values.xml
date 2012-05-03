@@ -1,0 +1,172 @@
+<truth-values camera="low-res" height="71">
+<image name="1_color.png">
+    <cube color="black1" z-index="1" x="244" y="215"/>
+    <cube color="red1" z-index="1" x="192" y="182"/>
+    <cube color="clear1" z-index="1" x="260" y="423" />
+    <cube color="bluetooth1" z-index="1" x="240" y="179" />
+    <cube color="bluetooth2" z-index="1" x="259" y="252" />
+    <cube color="bluetooth3" z-index="1" x="223" y="420" /> 
+</image>
+<image name="2_color.png ">
+    <cube color="black1" z-index="1" x="244" y="215"/>
+    <cube color="red1" z-index="1" x="192" y="182"/>
+    <cube color="clear1" z-index="1" x="260" y="423" />
+    <cube color="bluetooth1" z-index="1" x="240" y="179" />
+    <cube color="bluetooth2" z-index="1" x="259" y="252" />
+    <cube color="bluetooth3" z-index="1" x="223" y="420" /> 
+</image>
+<image name="3_color.png ">
+    <cube color="black1" z-index="1" x="181" y="284" />
+    <cube color="red1" z-index="1" x="197" y="84" />
+    <cube color="clear1" z-index="1" x="275" y="162" />
+    <cube color="clear2" z-index="1" x="347" y="388" />
+    <cube color="bluetooth1" z-index="1" x="106" y="175" />
+    <cube color="bluetooth2" z-index="1" x="379" y="218" />
+    <cube color="bluetooth3" z-index="1" x="322" y="244" />
+    <cube color="bluetooth4" z-index="1" x="228" y="365" />
+</image>
+<image name="4_color.png ">
+    <cube color="black1" z-index="1" x="181" y="284" />
+    <cube color="red1" z-index="1" x="197" y="84" />
+    <cube color="clear1" z-index="1" x="313" y="287" />
+    <cube color="clear2" z-index="1" x="319" y="363" />
+    <cube color="bluetooth1" z-index="1" x="106" y="175" />
+    <cube color="bluetooth2" z-index="1" x="379" y="218" />
+    <cube color="bluetooth3" z-index="1" x="317" y="325" />
+    <cube color="bluetooth4" z-index="1" x="228" y="368" />
+</image>
+<image name="5_color.png ">
+    <cube color="black1" z-index="1" x="181" y="284" />
+    <cube color="red1" z-index="1" x="197" y="84" />
+    <cube color="clear1" z-index="1" x="306" y="264" />
+    <cube color="clear2" z-index="1" x="303" y="345" />
+    <cube color="bluetooth1" z-index="1" x="106" y="175" />
+    <cube color="bluetooth2" z-index="1" x="379" y="218" />
+    <cube color="bluetooth3" z-index="1" x="316" y="301" />
+    <cube color="bluetooth4" z-index="1" x="228" y="368" />
+</image>
+<image name="6_color.png ">
+    <cube color="black1" z-index="1" x="181" y="284" />
+    <cube color="red1" z-index="1" x="197" y="84" />
+    <cube color="clear1" z-index="1" x="249" y="272" />
+    <cube color="clear2" z-index="1" x="323" y="284" />
+    <cube color="bluetooth1" z-index="1" x="106" y="175" />
+    <cube color="bluetooth2" z-index="1" x="379" y="218" />
+    <cube color="bluetooth3" z-index="1" x="287" y="277" />
+    <cube color="bluetooth4" z-index="1" x="228" y="368" />
+</image>
+<image name="7_color.png ">
+    <cube color="black1" z-index="1" x="257" y="309" />
+    <cube color="red1" z-index="1" x="197" y="84" />
+    <cube color="clear1" z-index="1" x="282" y="272" />
+    <cube color="clear2" z-index="1" x="354" y="320" />
+    <cube color="bluetooth1" z-index="1" x="106" y="175" />
+    <cube color="bluetooth2" z-index="1" x="379" y="217" />
+    <cube color="bluetooth3" z-index="1" x="240" y="332" />
+</image>
+<image name="8_color.png ">
+    <cube color="black1" z-index="1" x="256" y="306" />
+    <cube color="red1" z-index="1" x="252" y="250" />
+    <cube color="clear1" z-index="1" x="282" y="272" />
+    <cube color="clear2" z-index="1" x="354" y="320" />
+    <cube color="bluetooth1" z-index="1" x="106" y="175" />
+    <cube color="bluetooth2" z-index="1" x="379" y="217" />
+    <cube color="bluetooth3" z-index="1" x="239" y="332" />
+</image>
+<image name="9_color.png ">
+    <cube color="black1" z-index="1" x="260" y="310" />
+    <cube color="red1" z-index="1" x="252" y="252" />
+    <cube color="clear1" z-index="1" x="282" y="272" />
+    <cube color="clear2" z-index="1" x="354" y="320" />
+    <cube color="bluetooth1" z-index="1" x="379" y="217" />
+    <cube color="bluetooth2" z-index="1" x="212" y="318" />
+    <cube color="bluetooth3" z-index="1" x="244" y="335" />
+</image>
+<image name="10_color.png ">
+    <cube color="black1" z-index="1" x="232" y="280" />
+    <cube color="red1" z-index="1" x="275" y="241" />
+    <cube color="clear1" z-index="1" x="277" y="278" />
+    <cube color="clear2" z-index="1" x="363" y="322" />
+    <cube color="bluetooth1" z-index="1" x="200" y="244" />
+    <cube color="bluetooth2" z-index="1" x="203" y="280" />
+    <cube color="bluetooth3" z-index="1" x="355" y="285" />
+</image>
+<image name="11_color.png ">
+    <cube color="red1" z-index="1" x="566" y="20" />
+    <cube color="clear1" z-index="1" x="288" y="321" />
+    <cube color="clear2" z-index="1" x="591" y="51" />
+    <cube color="bluetooth1" z-index="1" x="261" y="219" />
+    <cube color="bluetooth2" z-index="1" x="600" y="127" />
+    <cube color="bluetooth3" z-index="1" x="631" y="103" />
+</image>
+<image name="12_color.png ">
+    <cube color="clear1" z-index="1" x="293" y="277" />
+    <cube color="clear2" z-index="1" x="558" y="259" />
+    <cube color="bluetooth1" z-index="1" x="575" y="221" />
+    <cube color="bluetooth2" z-index="1" x="600" y="127" />
+    <cube color="bluetooth3" z-index="1" x="631" y="103" />
+</image>
+<image name="13_color.png ">
+    <cube color="red1" z-index="1" x="296" y="251" />
+    <cube color="clear1" z-index="1" x="557" y="258" />
+    <cube color="bluetooth1" z-index="1" x="575" y="221" />
+    <cube color="bluetooth2" z-index="1" x="600" y="127" />
+    <cube color="bluetooth3" z-index="1" x="631" y="103" />
+</image>
+<image name="14_color.png ">
+    <cube color="black1" z-index="1" x="338" y="351" />
+    <cube color="red1" z-index="1" x="296" y="252" />
+    <cube color="clear1" z-index="1" x="236" y="318" />
+    <cube color="clear2" z-index="1" x="568" y="260" />
+    <cube color="bluetooth1" z-index="1" x="629" y="159" />
+    <cube color="bluetooth2" z-index="1" x="605" y="128" />
+    <cube color="bluetooth3" z-index="1" x="637" y="106" />
+    <cube color="bluetooth4" z-index="1" x="285" y="163" />
+</image>
+<image name="15_color.png ">
+    <cube color="black1" z-index="1" x="384" y="428" />
+    <cube color="red1" z-index="1" x="357" y="214" />
+    <cube color="clear1" z-index="1" x="568" y="259" />
+    <cube color="clear2" z-index="1" x="225" y="437" />
+    <cube color="bluetooth1" z-index="1" x="214" y="238" />
+    <cube color="bluetooth2" z-index="1" x="628" y="159" />
+    <cube color="bluetooth3" z-index="1" x="605" y="128" />
+    <cube color="bluetooth4" z-index="1" x="637" y="105" />
+</image>
+<image name="16_color.png ">
+    <cube color="black1" z-index="1" x="384" y="428" />
+    <cube color="red1" z-index="1" x="357" y="214" />
+    <cube color="clear1" z-index="1" x="225" y="437" />
+    <cube color="bluetooth1" z-index="1" x="214" y="238" />
+    <cube color="bluetooth2" z-index="1" x="284" y="316" />
+    <cube color="bluetooth3" z-index="1" x="289" y="351" />
+</image>
+<image name="17_color.png ">
+    <cube color="black1" z-index="1" x="384" y="428" />
+    <cube color="clear1" z-index="1" x="225" y="437" />
+    <cube color="bluetooth1" z-index="1" x="255" y="317" />
+    <cube color="bluetooth2" z-index="1" x="307" y="316" />
+</image>
+<image name="18_color.png ">
+    <cube color="black1" z-index="1" x="384" y="428" />
+    <cube color="clear1" z-index="1" x="225" y="437" />
+    <cube color="bluetooth1" z-index="1" x="108" y="101" />
+    <cube color="bluetooth2" z-index="1" x="201" y="168" />
+</image>
+<image name="19_color.png ">
+    <cube color="black1" z-index="1" x="384" y="428" />
+    <cube color="clear1" z-index="1" x="225" y="437" />
+    <cube color="bluetooth1" z-index="1" x="317" y="432" />
+    <cube color="bluetooth2" z-index="1" x="357" y="375" />
+</image>
+<image name="20_color.png ">
+    <cube color="black1" z-index="1" x="384" y="428" />
+    <cube color="red1" z-index="1" x="272" y="240" />
+    <cube color="clear1" z-index="1" x="285" y="274" />
+    <cube color="clear2" z-index="1" x="225" y="437" />
+    <cube color="bluetooth1" z-index="1" x="257" y="205" />
+    <cube color="bluetooth2" z-index="1" x="299" y="309" />
+    <cube color="bluetooth3" z-index="1" x="311" y="344" />
+    <cube color="bluetooth4" z-index="1" x="346" y="330" />
+</image>
+</truth-values>
