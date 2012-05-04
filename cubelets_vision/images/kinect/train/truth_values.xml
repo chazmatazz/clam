@@ -1,8 +1,12 @@
 <truth-values cube_radius="20">
-<image id="7">
-    <cube color="black" x="315" y="146"/>
-    <cube color="red" x="148" y="164"/>
-    <cube color="clear" x="299" y="220" />
-    <cube color="bluetooth" x="204" y="237" />
+<image id="10">
+    <cube color="black" x="236" y="217"/>
+    <cube color="red" x="395" y="205"/>
+    <cube color="clear" x="397" y="279" />
+    <cube color="light_green" x="312" y="213" />
+	<cube color="dark_green" x="243" y="288" />
+	<cube color="brown" x="319" y="279" />
+	<cube color="gray" x="399" y="344" />
+	<cube color="wheat" x="322" y="357" />
 </image>
 </truth-values>

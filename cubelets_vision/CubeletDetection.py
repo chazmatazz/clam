@@ -7,6 +7,7 @@ import rospy
 import cv, cv2
 import numpy
 import math
+import random
 import xml.etree.ElementTree as ET
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
@@ -15,19 +16,41 @@ import threading
 import time
 import os
 
-BLACK = "black"
-RED = "red"
-CLEAR = "clear"
-BLUETOOTH = "bluetooth"
+COLORS = {"black": (0, 0, 0),
+          "red": (34, 34, 178),
+          "clear": (255, 255, 255), 
+          "light_green": (0, 255, 127),
+          "dark_green": (34, 139, 34),
+          "gray": (128, 128, 128),
+          "wheat": (179, 222, 245),
+          "brown": (19, 69, 139)}
 
 TYPE = "kinect"
 FOLDER = "train"
-NUM_IMAGES = 32
-TRAIN_N = 7 # could also get from XML
+NUM_IMAGES = 18
+TRAIN_N = 10 # could also get from XML
 TEST_IMAGES = [("%s %s %s" % (TYPE, FOLDER, n), "images/%s/%s/%s_color.png" % (TYPE, FOLDER, n), "images/%s/%s/%s_depth.png" % (TYPE, FOLDER, n), "results/%s/%s/%s.png" % (TYPE, FOLDER, n), n) for n in range(1, NUM_IMAGES + 1)]
 TRAINING_IMAGE = TEST_IMAGES[TRAIN_N-1]
 TRAINING_XML = "images/%s/%s/truth_values.xml" % (TYPE, FOLDER)
 
+def bestDepth(img):
+    """ RANSAC """
+    bestStd = None
+    bestDepth = 0
+    for i in range(100):
+        depthList = []
+        for j in range(25):
+            rx = random.randint(0, img.width-1)
+            ry = random.randint(0, img.height-1)
+            depth = img[ry,rx]
+            if depth != 0:
+                depthList.append(depth)
+        std = numpy.std(numpy.array(depthList))
+        if bestStd == None or std < bestStd:
+            bestStd = std
+            bestDepth = (1.0 * sum(depthList))/len(depthList)
+    return bestDepth
+    
 def loadDepthImage(path):
         """ load a depth image into a mm image """
         img = cv.LoadImageM(path)
@@ -120,9 +143,7 @@ class EdgeTemplate:
         
         # get the floor height as the max dist of the surface in the center area
         depthImg = loadDepthImage(depth_image)
-        centerImg = self.subRect(depthImg, (depthImg.height/2-center_area_px/2, depthImg.width/2-center_area_px/2, center_area_px, center_area_px), cv.CV_16UC1)
-        (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(centerImg)
-        self.floor_dist = maxval
+        self.floor_dist = bestDepth(depthImg)
         
         templateImage = cv.LoadImageM(color_image)
         templateGray = cv.CreateMat(templateImage.height, templateImage.width, cv.CV_8UC1)
@@ -297,7 +318,6 @@ class EdgeTemplate:
 
         while minval < self.edge_threshold:                    
             results += [(min_x + self.cube_radius, min_y + self.cube_radius)]
-            # draw the exclusion circle
             cv.Circle(combinedResult, (min_x, min_y), self.cube_radius * 2, maxval, -1)
             (minval, maxval, (min_x, min_y), maxloc) = cv.MinMaxLoc(combinedResult)
 
@@ -319,14 +339,20 @@ class EdgeTemplate:
             angle = findRotation(lines, p, self.cube_radius * 1.5)
             
             # Find the z of the cube
-            dim = self.cube_radius*2
+            dim = self.cube_radius
             depthImgRect = self.subRect(depth_img, (x-dim/2, y-dim/2, dim, dim), cv.CV_16UC1)
+            s = 0
+            cnt = 0
             for i in range(depthImgRect.height):
                 for j in range(depthImgRect.width):
-                    if depthImgRect[i,j] == 0:
-                        depthImgRect[i,j] = self.floor_dist
-            (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(depthImgRect)
-            z = self.floor_dist - minval
+                    if depthImgRect[i,j] != 0:
+                        s += depthImgRect[i,j]
+                        cnt += 1
+            
+            if cnt == 0:
+                z = 0
+            else:
+                z = self.floor_dist - (1.0 * s)/cnt
             
             ret += [(x, y, z, angle, color)]
         
@@ -335,26 +361,16 @@ class EdgeTemplate:
         
     def drawMatch(self, color_img, depth_img):
         """ create a match image """
-        def getColor(color):
-            if color == BLACK:
-                return (0, 0, 0)
-            elif color == RED:
-                return (0, 0, 255)
-            elif color == CLEAR:
-                return (255, 255, 255)
-            elif color == BLUETOOTH:
-                return (255, 0, 0)
-            
         for match in self.matchTemplate(color_img, depth_img):
             (x, y, z, angle, color) = match
             p = (x, y)
-            cv.Circle(color_img, p, self.DIA, getColor(color), -1)
+            cv.Circle(color_img, p, self.DIA, COLORS[color], -1)
             cv.Circle(color_img, p, self.DIA, self.WHITE)
             cv.Circle(color_img, p, self.cube_radius, self.WHITE)
             if angle:
                 cv.Line(color_img, p, (int(x + self.cube_radius * numpy.cos(angle)), int(y - self.cube_radius * numpy.sin(angle))), self.WHITE)
-            cv.PutText(color_img, "%d" % z, p, self.FONT, self.WHITE)
-        cv.PutText(color_img, "%d" % self.floor_dist, (10,10), self.FONT, self.GREEN)
+        #    cv.PutText(color_img, "%d" % z, (x+self.cube_radius, y), self.FONT, self.WHITE)
+        #cv.PutText(color_img, "%d" % self.floor_dist, (10, 10), self.FONT, self.GREEN)
         
 def getImages():
     """ retrieve images into TYPE, FOLDER """
@@ -391,7 +407,7 @@ def getImages():
             depth_image = cv.CreateMat(my_mono16.height, my_mono16.width, cv.CV_8UC3)
             for i in range(my_mono16.height):
                 for j in range(my_mono16.width):
-                    v = my_mono16[i,j]
+                    v = int(my_mono16[i,j])
                     depth_image[i, j] = (v / 256, v % 256, 0)
             cv.SaveImage("%s/%s_depth.png" % (self.images_dir, count), depth_image)
     
@@ -458,8 +474,8 @@ def matchImages(test_images=TEST_IMAGES, training_xml=TRAINING_XML,
         color_img = cv.LoadImageM(color_image)
         depth_img = loadDepthImage(depth_image)
         et.drawMatch(color_img, depth_img)
-        cv.ShowImage(("Truth %s" % window_name) if (et.truth_n==n) else window_name, color_img)
-        # cv.SaveImage(result_image, color_img)
+        #cv.ShowImage(("Truth %s" % window_name) if (et.truth_n==n) else window_name, color_img)
+        cv.SaveImage(result_image, color_img)
     
     cv.WaitKey()
     
