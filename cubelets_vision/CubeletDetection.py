@@ -20,17 +20,15 @@ RED = "red"
 CLEAR = "clear"
 BLUETOOTH = "bluetooth"
 
-TYPE = "low-res-webcam"
-FOLDER = "white"
-NUM_IMAGES = 18
-TEST_IMAGES = [("%s %s %s" % (TYPE, FOLDER, n), "images/%s/%s/%s.jpg" % (TYPE, FOLDER, n), "images/%s/%s/%s_depth.png" % (TYPE, FOLDER, n), "results/%s/%s/%s.png" % (TYPE, FOLDER, n), n) for n in range(1, NUM_IMAGES + 1)]
-TRAINING_IMAGE = TEST_IMAGES[1]
+TYPE = "kinect"
+FOLDER = "train"
+NUM_IMAGES = 20
+TRAIN_N = 14 # could also get from XML
+TEST_IMAGES = [("%s %s %s" % (TYPE, FOLDER, n), "images/%s/%s/%s_color.png" % (TYPE, FOLDER, n), "images/%s/%s/%s_depth.png" % (TYPE, FOLDER, n), "results/%s/%s/%s.png" % (TYPE, FOLDER, n), n) for n in range(1, NUM_IMAGES + 1)]
+TRAINING_IMAGE = TEST_IMAGES[TRAIN_N-1]
 TRAINING_XML = "images/%s/%s/truth_values.xml" % (TYPE, FOLDER)
 
-class EdgeTemplate:
-    """ creates an edge template """
-    
-    def loadDepthImage(self, path):
+def loadDepthImage(path):
         """ load a depth image into a mm image """
         img = cv.LoadImageM(path)
         result = cv.CreateMat(img.height, img.width, cv.CV_32FC1)
@@ -39,6 +37,25 @@ class EdgeTemplate:
                 (red, green, blue) = img[i, j]
                 result[i, j] = red * (1 << 8) + green
         return result
+
+class EdgeTemplate:
+    """ creates an edge template """
+    
+    WHITE = (255, 255, 255)
+    DIA = 6
+    FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
+    
+    def subRect(self, src, dim, typ):
+        (y,x,h,w) = dim
+        img = cv.CreateMat(h, w, typ)
+        cv.Zero(img)
+        for i in range(h):
+            for j in range(w):
+                dy = y+i
+                dx = x+j
+                if dy > 0 and dx > 0 and dy < src.height and dx < src.height:
+                    img[i,j] = src[dy, dx]
+        return img
 
     def vhDeltaProductFilter(self, gray):
         """ 
@@ -77,7 +94,7 @@ class EdgeTemplate:
     
         return rgb
     
-    def __init__(self, training_xml, training_image, edge_threshold=0.72, rotation_degrees=15):
+    def __init__(self, training_xml, training_image, edge_threshold=0.72, rotation_degrees=15, cube_height_mm=45, center_area_mm=100):
         """ create the template """
         def rotateImage(img, center, degrees):
             """ Rotate an image within its frame bounds (width and height do not change) """
@@ -94,8 +111,17 @@ class EdgeTemplate:
         
         self.edge_threshold = edge_threshold
         self.rotation_degrees = rotation_degrees
+        self.cube_height_mm = cube_height_mm
         
         (window_name, color_image, depth_image, result_image, n) = training_image
+        self.truth_n = n
+        
+        # get the floor height as the max dist of the surface in the center area
+        depthImg = loadDepthImage(depth_image)
+        centerImg = self.subRect(depthImg, (depthImg.height/2-center_area_mm/2, depthImg.width/2-center_area_mm/2, center_area_mm, center_area_mm), cv.CV_32FC1)
+        (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(centerImg)
+        self.floor_dist = maxval
+        
         templateImage = cv.LoadImageM(color_image)
         templateGray = cv.CreateMat(templateImage.height, templateImage.width, cv.CV_8UC1)
         cv.CvtColor(templateImage, templateGray, cv.CV_BGR2GRAY)
@@ -111,14 +137,11 @@ class EdgeTemplate:
             color = cube.attrib["color"]
             x = int(cube.attrib["x"])
             y = int(cube.attrib["y"])
-            template = cv.CreateMat(self.cube_radius * 2, self.cube_radius * 2, cv.CV_8UC1)
             counter = 0
             # Save the average color of the template cube
             self.templateColors[color] = self.avgColor(templateImage, (x, y), self.cube_radius)
             # Take the sub image
-            for i in range(self.cube_radius * 2):
-                for j in range(self.cube_radius * 2):
-                    template[i, j] = edgeImage[y + i - self.cube_radius, x + j - self.cube_radius]
+            template = self.subRect(edgeImage, (y - self.cube_radius, x - self.cube_radius, self.cube_radius*2, self.cube_radius*2), cv.CV_8UC1)
             # Rotate the sub image and save it
             for multiplier in range(90 / rotation_degrees):
                 ry = template.height / 2
@@ -128,7 +151,7 @@ class EdgeTemplate:
                 self.templates[color + str(counter)] = rotated
                 counter += 1
     
-    def matchTemplate(self, img):
+    def matchTemplate(self, color_img, depth_img):
         """ match an image to the template """
         # defs
         def avgPointCenter(matchList):
@@ -245,8 +268,8 @@ class EdgeTemplate:
             return filtered
         
         # start code
-        grayTestImage = cv.CreateMat(img.height, img.width, cv.CV_8UC1)
-        cv.CvtColor(img, grayTestImage, cv.CV_BGR2GRAY)
+        grayTestImage = cv.CreateMat(color_img.height, color_img.width, cv.CV_8UC1)
+        cv.CvtColor(color_img, grayTestImage, cv.CV_BGR2GRAY)
 
         testImage = self.vhDeltaProductFilter(grayTestImage)
 
@@ -281,7 +304,7 @@ class EdgeTemplate:
         ret = []
         for p in results:
             (x, y) = p
-            cubeColor = self.avgColor(img, p, self.cube_radius)
+            cubeColor = self.avgColor(color_img, p, self.cube_radius)
             # Match the color to the given template cubes
             minDist = ()
             color = None
@@ -292,12 +315,19 @@ class EdgeTemplate:
                     color = c
             # Find the rotation of the cube
             angle = findRotation(lines, p, self.cube_radius * 1.5)
-            ret += [(x, y, angle, color)]
+            
+            # Find the z of the cube
+            dim = self.cube_radius*2
+            depthImgRect = self.subRect(depth_img, (x-dim/2, y-dim/2, dim, dim), cv.CV_32FC1)
+            (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(depthImgRect)
+            z = maxval - self.floor_dist
+            
+            ret += [(x, y, z, angle, color)]
         
         return ret
 
         
-    def drawMatch(self, img):
+    def drawMatch(self, color_img, depth_img):
         """ create a match image """
         def getColor(color):
             if color == BLACK:
@@ -309,17 +339,16 @@ class EdgeTemplate:
             elif color == BLUETOOTH:
                 return (255, 0, 0)
             
-        white = (255, 255, 255)
-        dia = 6
-        for match in self.matchTemplate(img):
-            (x, y, angle, color) = match
+        for match in self.matchTemplate(color_img, depth_img):
+            (x, y, z, angle, color) = match
             p = (x, y)
-            cv.Circle(img, p, dia, getColor(color), -1)
-            cv.Circle(img, p, dia, white)
-            cv.Circle(img, p, self.cube_radius, white)
+            cv.Circle(color_img, p, self.DIA, getColor(color), -1)
+            cv.Circle(color_img, p, self.DIA, self.WHITE)
+            cv.Circle(color_img, p, self.cube_radius, self.WHITE)
             if angle:
-                cv.Line(img, p, (int(x + self.cube_radius * numpy.cos(angle)), int(y - self.cube_radius * numpy.sin(angle))), white)
-
+                cv.Line(color_img, p, (int(x + self.cube_radius * numpy.cos(angle)), int(y - self.cube_radius * numpy.sin(angle))), self.WHITE)
+            cv.PutText(color_img, "%d" % z, p, self.FONT, self.WHITE)
+            
 def getImages():
     """ retrieve images into TYPE, FOLDER """
     
@@ -418,14 +447,15 @@ def matchImages(test_images=TEST_IMAGES, training_xml=TRAINING_XML,
     """ match a set of images to a template """
     et = EdgeTemplate(training_xml, training_image)
     for (window_name, color_image, depth_image, result_image, n) in test_images:
-        img = cv.LoadImageM(color_image)
-        et.drawMatch(img)
-        cv.ShowImage(window_name, img)
-        # cv.SaveImage(result_image, img)
+        color_img = cv.LoadImageM(color_image)
+        depth_img = loadDepthImage(depth_image)
+        et.drawMatch(color_img, depth_img)
+        cv.ShowImage(("Truth %s" % window_name) if (et.truth_n==n) else window_name, color_img)
+        # cv.SaveImage(result_image, color_img)
     
     cv.WaitKey()
     
-def matchVideo(training_xml=TRAINING_XML, training_image=TRAINING_IMAGE, camera_index=0):
+def matchVideo(training_xml=TRAINING_XML, training_image=TRAINING_IMAGE):
     et = EdgeTemplate(training_xml, training_image)
 
-    #TODO
+    
