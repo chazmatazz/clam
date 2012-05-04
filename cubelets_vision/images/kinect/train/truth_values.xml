@@ -1,8 +1,8 @@
 <truth-values cube_radius="20">
-<image id="14">
-    <cube color="black" x="338" y="351"/>
-    <cube color="red" x="297" y="253"/>
-    <cube color="clear" x="236" y="317" />
-    <cube color="bluetooth" x="286" y="163" />
+<image id="7">
+    <cube color="black" x="315" y="146"/>
+    <cube color="red" x="148" y="164"/>
+    <cube color="clear" x="299" y="220" />
+    <cube color="bluetooth" x="204" y="237" />
 </image>
 </truth-values>

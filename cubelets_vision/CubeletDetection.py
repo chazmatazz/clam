@@ -22,8 +22,8 @@ BLUETOOTH = "bluetooth"
 
 TYPE = "kinect"
 FOLDER = "train"
-NUM_IMAGES = 20
-TRAIN_N = 14 # could also get from XML
+NUM_IMAGES = 32
+TRAIN_N = 7 # could also get from XML
 TEST_IMAGES = [("%s %s %s" % (TYPE, FOLDER, n), "images/%s/%s/%s_color.png" % (TYPE, FOLDER, n), "images/%s/%s/%s_depth.png" % (TYPE, FOLDER, n), "results/%s/%s/%s.png" % (TYPE, FOLDER, n), n) for n in range(1, NUM_IMAGES + 1)]
 TRAINING_IMAGE = TEST_IMAGES[TRAIN_N-1]
 TRAINING_XML = "images/%s/%s/truth_values.xml" % (TYPE, FOLDER)
@@ -31,17 +31,19 @@ TRAINING_XML = "images/%s/%s/truth_values.xml" % (TYPE, FOLDER)
 def loadDepthImage(path):
         """ load a depth image into a mm image """
         img = cv.LoadImageM(path)
-        result = cv.CreateMat(img.height, img.width, cv.CV_32FC1)
+        # cv.ShowImage("depth sep %s" % path, img)
+        result = cv.CreateMat(img.height, img.width, cv.CV_16UC1)
         for i in range(img.height):
             for j in range(img.width):
-                (red, green, blue) = img[i, j]
-                result[i, j] = red * (1 << 8) + green
+                (blue, green, red) = img[i, j]
+                result[i, j] = blue * 256 + green
         return result
 
 class EdgeTemplate:
     """ creates an edge template """
     
     WHITE = (255, 255, 255)
+    GREEN = (0, 255, 0)
     DIA = 6
     FONT = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 3, 8)
     
@@ -53,7 +55,7 @@ class EdgeTemplate:
             for j in range(w):
                 dy = y+i
                 dx = x+j
-                if dy > 0 and dx > 0 and dy < src.height and dx < src.height:
+                if dy >= 0 and dx >= 0 and dy < src.height and dx < src.width:
                     img[i,j] = src[dy, dx]
         return img
 
@@ -94,7 +96,7 @@ class EdgeTemplate:
     
         return rgb
     
-    def __init__(self, training_xml, training_image, edge_threshold=0.72, rotation_degrees=15, cube_height_mm=45, center_area_mm=100):
+    def __init__(self, training_xml, training_image, edge_threshold=0.72, rotation_degrees=15, cube_height_mm=45, center_area_px=50):
         """ create the template """
         def rotateImage(img, center, degrees):
             """ Rotate an image within its frame bounds (width and height do not change) """
@@ -118,7 +120,7 @@ class EdgeTemplate:
         
         # get the floor height as the max dist of the surface in the center area
         depthImg = loadDepthImage(depth_image)
-        centerImg = self.subRect(depthImg, (depthImg.height/2-center_area_mm/2, depthImg.width/2-center_area_mm/2, center_area_mm, center_area_mm), cv.CV_32FC1)
+        centerImg = self.subRect(depthImg, (depthImg.height/2-center_area_px/2, depthImg.width/2-center_area_px/2, center_area_px, center_area_px), cv.CV_16UC1)
         (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(centerImg)
         self.floor_dist = maxval
         
@@ -318,9 +320,13 @@ class EdgeTemplate:
             
             # Find the z of the cube
             dim = self.cube_radius*2
-            depthImgRect = self.subRect(depth_img, (x-dim/2, y-dim/2, dim, dim), cv.CV_32FC1)
+            depthImgRect = self.subRect(depth_img, (x-dim/2, y-dim/2, dim, dim), cv.CV_16UC1)
+            for i in range(depthImgRect.height):
+                for j in range(depthImgRect.width):
+                    if depthImgRect[i,j] == 0:
+                        depthImgRect[i,j] = self.floor_dist
             (minval, maxval, minloc, maxloc) = cv.MinMaxLoc(depthImgRect)
-            z = maxval - self.floor_dist
+            z = self.floor_dist - minval
             
             ret += [(x, y, z, angle, color)]
         
@@ -348,7 +354,8 @@ class EdgeTemplate:
             if angle:
                 cv.Line(color_img, p, (int(x + self.cube_radius * numpy.cos(angle)), int(y - self.cube_radius * numpy.sin(angle))), self.WHITE)
             cv.PutText(color_img, "%d" % z, p, self.FONT, self.WHITE)
-            
+        cv.PutText(color_img, "%d" % self.floor_dist, (10,10), self.FONT, self.GREEN)
+        
 def getImages():
     """ retrieve images into TYPE, FOLDER """
     
@@ -358,7 +365,7 @@ def getImages():
         def __init__(self, type=TYPE, folder=FOLDER):
             self.bridge = CvBridge()
             self.image_sub_color = rospy.Subscriber("/camera/rgb/image_color", Image, self.color_callback)
-            self.image_sub_depth = rospy.Subscriber("/camera/depth/image_raw", Image, self.depth_callback)
+            self.image_sub_depth = rospy.Subscriber("/camera/depth_registered/image_raw", Image, self.depth_callback)
             self.images_dir = "images/%s/%s" % (type, folder)
             if not os.path.isdir(self.images_dir):
                 os.makedirs(self.images_dir)
@@ -384,7 +391,8 @@ def getImages():
             depth_image = cv.CreateMat(my_mono16.height, my_mono16.width, cv.CV_8UC3)
             for i in range(my_mono16.height):
                 for j in range(my_mono16.width):
-                    depth_image[i, j] = (my_mono16[i, j] / (1 << 8), my_mono16[i, j] % (1 << 8), 0)
+                    v = my_mono16[i,j]
+                    depth_image[i, j] = (v / 256, v % 256, 0)
             cv.SaveImage("%s/%s_depth.png" % (self.images_dir, count), depth_image)
     
         def ready(self):
