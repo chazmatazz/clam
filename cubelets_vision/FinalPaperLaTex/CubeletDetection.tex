@@ -394,7 +394,7 @@ Boulder, CO 80302}
 
 \begin{abstract}
 %\boldmath
-In this paper we seek to describe a means to detect and localize structures created from Modular Robotics Cubelets using a combination of template matching and depth data from an RGB-D sensor, such as the Xbox Kinect.
+We describe a method for detecting and localizing Modular Robotics Cubelets in a scene, for use as a subsystem in a system for autononmous assembly of Cubelets constructions using a robotic arm and grasper. We use a camera such mounted over the work surface. Our method returns two-dimensional position and angle of rotation as well as the type of Cubelet. We obtain position and rotation using template matching on images preprocessed with a novel line detection algorithm. We obtain the type of Cubelet by using color information. We also describe a method to obtain depth information from a camera with an RGB-D sensor such as the Xbox Kinect.
 \end{abstract}
 % IEEEtran.cls defaults to using nonbold math in the Abstract.
 % This preserves the distinction between vectors and scalars. However,
@@ -422,13 +422,18 @@ In this paper we seek to describe a means to detect and localize structures crea
 
 \section{Introduction}
 % no \IEEEPARstart
-The purpose of this research is to add another step in the framework necessary to accomplish the overall goal of 'robots building robots'.  There are many ways to accomplish this, including the use of feature descriptors such as SURF to detect and match objects in an environment against a reference.  However, these methods tend to be much less robust when dealing with very symmetrical and regular objects, as opposed to the highly textured and uniquely patterned objects that the algorithm is normally tested upon. 
+The purpose of this research is to produce a vision subsystem to the system necessary to accomplish the overall goal of 'robots building robots'.  The 'robots building robots' project involves the assembly of robots made up of Modular Robotics Cubelets. Cubelets are a robotic toy consisting of a set of small cubes. Each cube, or Cubelet, is approximately 50mm on a side. Cubelets attach to one another by way of keyed magnetic faces. Each Cubelet contains a small computer. A Cubelet may be an actuator, a sensor, a thinking block or a battery block. Actuators have an actuation face and respond to incoming signals. Sensors have a sensor face and sense the environment and send out a signal. Thinking blocks change the signal received from neighbors in a predetermined way, e.g. a Inverse block inverts the signal received. The battery block provides power.
 \\[6pt]
- We hypothesize that template matching can provide a good means of cubelet detection, and with the addition of depth data, cubelet localization. The approach that we have taken involves starting with an example template, rotating it by increments, and applying template matching across a target image for each rotated template, then clustering points of high match likelihood.  The centers of these clusters correspond to the centers of detected matches.  We then use this information along with the captured depth data to determine the positions and pose of the cubelets.
+For the purposes of the overall goal of 'robots building robots', we are concerned with autonmously assembling the Cubelets into a predetermined structure that forms a robot. We assume that the Cubelets start scattered over the work surface, a flat, featureless surface. We intend to build the construction using the Clam arm, a small robotic arm intended for research, with a suitable grasper. We also intend to use ROS (Robot Operating System) to bring together the entire system.
 \\[6pt]
-If successful, this would provide a simple method for detecting and localizing the cubelets.  The risk, however, is that the method will be very slow, as template matching methods usually are compared to feature based matching.
+We assume that a vision subsystem is a necessary subsystem of the overall system. The vision subsystem will be used to direct the arm and grasper. The vision subsystem reifies visual and aligned depth camera data into an ontology that represents the arrangement of Cubelets on the work surface. This ontology can then be consumed by other parts of the system.
+\\[6pt]
+Our engineering solution provides a partial technology for providing a useful ontology. The ontology should contain position and rotation for each Cubelet as well as the type of Cubelet. Our technology aims to provide two dimensional position and rotation information and partial information on the type of Cubelet at a reasonable frame rate.
+\\[6pt]
+We hypothesize that template matching on images preprocessed with a novel line detection algorithm can provide position and orientation data. We hypothesize that color matching on matched areas can provide partial information on the type of Cubelet.
 
-
+\subsection{Background}
+The problem of providing the desired ontology is largely one of object detection, a well-known problem in computer vision. Object detection methods include feature detection methods such as SIFT and SURF as well as template matching, segmentation and classification of segments, and flexible template matching. Feature based-methods are generally faster than template matching. We present evidence that SURF does not work well with Cubelets due to their particular appearance.
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
@@ -513,7 +518,11 @@ If successful, this would provide a simple method for detecting and localizing t
 % command of the stfloats package.
 
 \section{Matters and Materials}
-To accomplish our goals, we have leveraged the capabilities of the OpenCV computer vision library, specifically the python 2.1 bindings.  In order to make the scope of this problem more manageable, we are also restricting the setup of the camera and depth sensor to being fixed in an overhead view above the cubelet work area.
+Our experimental setup consists of a Xbox Kinect camera mounted 65cm above the work surface. This distance is far enough for the depth sensor to work even if the blocks are stacked, but close enough to make out features on the faces of the Cubelets. The work surface is covered in white paper. The lighting is not controlled but is normal office lighting.
+\\[6pt]
+We generated two sets of 20 images each under the same setup and lighting conditions. Each image takes a picture of an arrangement of Cubelets. The Cubelet arrangements are determined by us. The first set was used as a training set to train the vision subsystem. The second set was used as a test set to generate the experimental results.
+\\[6pt]
+Our software is written in Python and uses ROS with OpenCV and openni\_kinect.
 
 \subsection{General Methods}
 To manage the information related to the templates, we've created a single file with a variety of template images, scaled to approximately the same size.  In addition to this, we have an xml file marking the (x,y) locations of each template cube within the larger image, as well as the idea template radius for that cube.  For the actual templates, we use the region around the circlular portion of the cube face.    
