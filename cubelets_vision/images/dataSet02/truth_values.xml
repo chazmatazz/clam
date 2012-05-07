@@ -1,0 +1,99 @@
+<truth-values camera="low-res" height="71">
+<image name="1.png">
+    <cube color="black" z-index="1" x="338" y="350" rotation="8"/>
+    <cube color="red" z-index="1" x="296" y="252" rotation="11.2"/>
+    <cube color="clear" z-index="1" x="235" y="319" rotation="0" />
+    <cube color="blue" z-index="1" x="163" y="301" rotation="-12.6" />
+</image>
+<image name="2.png">
+    <cube color="black" z-index="1" x="242" y="214" rotation="12.7"/>
+    <cube color="red" z-index="1" x="192" y="182" rotation="10.9"/>
+    <cube color="clear" z-index="1" x="260" y="423" rotation="-2.5" />
+    <cube color="blue" z-index="1" x="221" y="421" rotation="-2.5" />
+    <cube color="blue" z-index="1" x="240" y="179" rotation="12.7" />
+</image>
+<image name="3.png">
+    <cube color="black" z-index="1" x="179" y="283" rotation="-17"/>
+    <cube color="red" z-index="1" x="195" y="84" rotation="10.9"/>
+    <cube color="clear" z-index="1" x="276" y="160" rotation="-5.8" />
+    <cube color="clear" z-index="1" x="348" y="388" rotation="54.7" />
+
+    <cube color="blue" z-index="1" x="104" y="173" rotation="29.8" />
+    <cube color="blue" z-index="1" x="378" y="218" rotation="-25.1" />
+    <cube color="blue" z-index="1" x="321" y="243" rotation="42" />
+    <cube color="blue" z-index="1" x="227" y="365" rotation="-17.9" />
+</image>
+
+<image name="4.png">
+    <cube color="black" z-index="1" x="257" y="308" rotation="-29.5"/>
+    <cube color="red" z-index="1" x="195" y="83" rotation="10.9"/>
+    <cube color="clear" z-index="1" x="281" y="271" rotation="-29.5" />
+    <cube color="clear" z-index="1" x="355" y="320" rotation="-13" />
+    <cube color="blue" z-index="1" x="240" y="334" rotation="-29.5" />
+    <cube color="blue" z-index="1" x="379" y="219" rotation="-29.5" />
+    <cube color="blue" z-index="1" x="104" y="173" rotation="27.2" />
+</image>
+
+<image name="5.png">
+    <cube color="black" z-index="1" x="383" y="430" rotation="0"/>
+    <cube color="clear" z-index="1" x="224" y="439" rotation="-7" />
+    <cube color="blue" z-index="1" x="254" y="316" rotation="55.2" />
+    <cube color="blue" z-index="1" x="306" y="315" rotation="55.2" />
+</image>
+
+<image name="6.png">
+    <cube color="black" z-index="1" x="384" y="428" rotation="-3.7"/>
+    <cube color="clear" z-index="1" x="224" y="439" rotation="-7" />
+
+    <cube color="red" z-index="1" x="270" y="240" rotation="18.7"/>
+    <cube color="clear" z-index="1" x="285" y="274" rotation="18.7" />
+    <cube color="blue" z-index="1" x="257" y="206" rotation="18.7" />
+    <cube color="blue" z-index="1" x="297" y="309" rotation="18.7" />
+    <cube color="blue" z-index="1" x="312" y="344" rotation="18.7" />
+    <cube color="blue" z-index="1" x="345" y="330" rotation="18.7" />
+</image>
+
+<image name="7.png">
+    <cube color="black" z-index="1" x="385" y="426" rotation="-3.7"/>
+    <cube color="clear" z-index="1" x="224" y="439" rotation="-7" />
+
+    <cube color="red" z-index="1" x="356" y="215" rotation="3.8"/>
+    <cube color="blue" z-index="1" x="212" y="238" rotation="3.8" />
+    <cube color="blue" z-index="1" x="283" y="316" rotation="7" />
+    <cube color="blue" z-index="1" x="290" y="350" rotation="7" />
+</image>
+
+<image name="8.png">
+    <cube color="black" z-index="1" x="253" y="306" rotation="55.3"/>
+    <cube color="red" z-index="1" x="250" y="250" rotation="55.3"/>
+    <cube color="clear" z-index="1" x="282" y="272" rotation="55.3" />
+    <cube color="blue" z-index="1" x="238" y="331" rotation="55.3" />
+
+    <cube color="clear" z-index="1" x="355" y="322" rotation="11.4" />
+    <cube color="blue" z-index="1" x="106" y="174" rotation="26.3" />
+    <cube color="blue" z-index="1" x="290" y="350" rotation="-29" />
+</image>
+
+<image name="9.png">
+    <cube color="black" z-index="1" x="253" y="306" rotation="55.3"/>
+    <cube color="red" z-index="1" x="250" y="250" rotation="55.3"/>
+    <cube color="clear" z-index="1" x="282" y="272" rotation="55.3" />
+    <cube color="blue" z-index="1" x="238" y="331" rotation="55.3" />
+    <cube color="blue" z-index="1" x="212" y="315" rotation="55.3" />
+
+    <cube color="clear" z-index="1" x="355" y="322" rotation="-10.8" />
+    <cube color="blue" z-index="1" x="377" y="216" rotation="-26.3" />
+</image>
+
+<image name="10.png">
+    <cube color="black" z-index="1" x="233" y="280" rotation="0"/>
+    <cube color="red" z-index="1" x="276" y="241" rotation="0"/>
+    <cube color="clear" z-index="1" x="277" y="277" rotation="0" />
+    <cube color="blue" z-index="1" x="200" y="244" rotation="0" />
+    <cube color="blue" z-index="1" x="201" y="281" rotation="0" />
+
+    <cube color="clear" z-index="1" x="363" y="321" rotation="11.5" />
+    <cube color="blue" z-index="1" x="356" y="285" rotation="11.5" />
+</image>
+
+</truth-values>
