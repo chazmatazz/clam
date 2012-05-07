@@ -1,0 +1,122 @@
+<truth-values cube_radius="20">
+<image name="1.png">
+    <cube color="black" x="236" y="217" rotation="0"/>
+    <cube color="red" x="395" y="205" rotation="0"/>
+    <cube color="clear" x="397" y="279" rotation="0"/>
+    <cube color="light_green" x="312" y="213" rotation="5.9"/>
+	<cube color="dark_green" x="243" y="288" rotation="5.9"/>
+	<cube color="brown" x="319" y="279" rotation="5.9"/>
+	<cube color="gray" x="399" y="344" rotation="0"/>
+	<cube color="wheat" x="322" y="357" rotation="5.9"/>
+</image>
+
+<image name="2.png">
+    <cube color="black" x="291" y="312" rotation="6.1"/>
+    <cube color="red" x="331" y="346" rotation="6.1"/>
+    <cube color="clear" x="287" y="277" rotation="6.1"/>
+    <cube color="light_green" x="364" y="304" rotation="6.1"/>
+	<cube color="dark_green" x="323" y="274" rotation="6.1"/>
+	<cube color="brown" x="360" y="267" rotation="6.1"/>
+	<cube color="wheat" x="327" y="310" rotation="6.1"/>
+</image>
+
+<image name="3.png">
+    <cube color="clear" x="224" y="231" rotation="0"/>
+    <cube color="black" x="223" y="268" rotation="0"/>
+
+	<cube color="dark_green" x="314" y="236" rotation="3.6"/>
+    <cube color="wheat" x="315" y="273" rotation="3.6"/>
+
+	<cube color="brown" x="415" y="267" rotation="-8.8"/>
+	<cube color="light_green" x="394" y="300" rotation="-8.8"/>
+
+    <cube color="red" x="269" y="367" rotation="-21.8"/>
+</image>
+
+<image name="4.png">
+    <cube color="black" x="169" y="298" rotation="8.1"/>
+    <cube color="light_green" x="206" y="294" rotation="8.1"/>
+
+    <cube color="red" x="297" y="372" rotation="30.5"/>
+    <cube color="clear" x="208" y="219" rotation="49.1"/>
+	<cube color="dark_green" x="371" y="183" rotation="-8.8"/>
+	<cube color="brown" x="393" y="304" rotation="5.3"/>
+	<cube color="wheat" x="308" y="295" rotation="54.9"/>
+</image>
+
+<image name="5.png">
+    <cube color="clear" x="258" y="211" rotation="6.1"/>
+	<cube color="dark_green" x="295" y="205" rotation="6.1"/>
+
+    <cube color="black" x="238" y="299" rotation="9.9"/>
+    <cube color="light_green" x="275" y="294" rotation="9.9"/>
+	<cube color="wheat" x="311" y="287" rotation="9.9"/>
+	<cube color="brown" x="347" y="281" rotation="9.9"/>
+
+    <cube color="red" x="311" y="378" rotation="12.5"/>
+</image>
+
+<image name="6.png">
+    <cube color="black" x="267" y="262" rotation="9.8"/>
+    <cube color="light_green" x="303" y="255" rotation="9.8"/>
+    <cube color="red" x="339" y="349" rotation="9.8"/>
+    <cube color="clear" x="309" y="292" rotation="9.8"/>
+	<cube color="dark_green" x="319" y="329" rotation="9.8"/>
+	<cube color="wheat" x="324" y="363" rotation="9.8"/>
+	<cube color="brown" x="289" y="371" rotation="9.8"/>
+</image>
+
+<image name="7.png">
+    <cube color="black" x="284" y="234" rotation="-4"/>
+    <cube color="light_green" x="319" y="238" rotation="-4"/>
+    <cube color="red" x="356" y="239" rotation="-4"/>
+
+    <cube color="clrear" x="385" y="276" rotation="1.3"/>
+
+	<cube color="dark_green" x="245" y="293" rotation="-20.6"/>
+
+	<cube color="wheat" x="313" y="344" rotation="-20.6"/>
+	<cube color="brown" x="299" y="380" rotation="-20.6"/>
+</image>
+
+<image name="8.png">
+	<cube color="wheat" x="240" y="208" rotation="-3.6"/>
+    <cube color="black" x="285" y="212" rotation="-3.6"/>
+
+	<cube color="dark_green" x="250" y="266" rotation="-1.9"/>
+	<cube color="dark_green" x="247" y="304" rotation="-1.9"/>
+    <cube color="light_green" x="209" y="300" rotation="-1.9"/>
+	<cube color="wheat" x="285" y="304" rotation="-1.9"/>
+    <cube color="clear" x="322" y="305" rotation="-1.9"/>
+
+	<cube color="gray" x="228" y="373" rotation="4.1"/>
+	<cube color="gray" x="266" y="368" rotation="4.1"/>
+</image>
+
+<image name="9.png">
+    <cube color="black" x="187" y="228" rotation="-11.1"/>
+    <cube color="light_green" x="251" y="225" rotation="28.9"/>
+
+    <cube color="clear" x="348" y="222" rotation="4.2"/>
+
+    <cube color="light_green" x="238" y="285" rotation="7.4"/>
+	<cube color="dark_green" x="275" y="279" rotation="7.4"/>
+	<cube color="dark_green" x="374" y="274" rotation="7.4"/>
+	<cube color="wheat" x="280" y="316" rotation="7.4"/>
+    <cube color="clear" x="283" y="355" rotation="7.4"/>
+	<cube color="gray" x="248" y="360" rotation="7.4"/>
+	<cube color="gray" x="323" y="351" rotation="7.4"/>
+</image>
+
+<image name="10.png">
+    <cube color="clear" x="238" y="236" rotation="8.1"/>
+	<cube color="dark_green" x="326" y="226" rotation="8.1"/>
+	<cube color="brown" x="444" y="203" rotation="8.1"/>
+
+    <cube color="black" x="250" y="334" rotation="8.1"/>
+	<cube color="wheat" x="353" y="315" rotation="8.1"/>
+    <cube color="light_green" x="462" y="303" rotation="8.1"/>
+
+    <cube color="red" x="367" y="401" rotation="8.1"/>
+</image>
+</truth-values>

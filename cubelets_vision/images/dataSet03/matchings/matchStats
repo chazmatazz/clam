@@ -1,0 +1,6 @@
+images: 10
+avg offset: 3.1 pixels, std 2.7 pixels
+color match rate: 84%
+avg angle offset: 5.0 degrees, std 6.8 degrees
+false positives: 1
+missed cubes: 6
