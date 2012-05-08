@@ -563,14 +563,88 @@ In order to determine the rotation of each cubes, we find try to utilize the rel
 
 \subsection{Depth Information}
 
+\subsection{Match Evaluation}
+To evaluate the quality of matchings and rotation estimations, we manually go through each test image and mark down the center of each cube, the color of each cube, and an estimation of cube's rotation. This was done by rotating the image in an image editing tool until a particular cube's edge was parallel to the x-axis, then marking down the rotation angle required.
+[6pt]
+The algorithm was run on three different data sets, each generated at different portions of the development process.  The first data set was taken with a a webcam, with the cubes sitting on a wood panel background.  The second data set was again taken with a webcam, but with the cubes sitting on a white-papered background.  The final data set was taken with a kinect sensor's camera, over a clean table background.
+
 \section{Results}
-\subsection{Match Improvement due to Rotational Matching}
 
-\subsection{Match Improvement due to Edge Enhancement}
+\begin{table}[!t]
+% increase table row spacing, adjust to taste
+\renewcommand{\arraystretch}{1.3}
+\caption{Cube Center Localization}
+\label{table_example}
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+ & Pixel Distance from Actual &  Standard Deviation\\
+\hline
+Set 1 (14 images) & 3.9 & 5.6\\
+\hline
+Set 2 (10 images) & 4.3 & 3.6\\
+\hline
+Set 3 (10 images) & 3.1 & 2.7\\
+\hline
+\end{tabular}
+\end{table}
 
-\subsection{Accuracy of Color Determination}
+\begin{table}[!t]
+% increase table row spacing, adjust to taste
+\renewcommand{\arraystretch}{1.3}
+\caption{Color Determination Accuracy}
+\label{table_example}
+\centering
+\begin{tabular}{|c|c|}
+\hline
+ & Accuracy\\
+\hline
+Set 1 (14 images) & 95\% \\
+\hline
+Set 2 (10 images) & 47\% \\
+\hline
+Set 3 (10 images) & 84\% \\
+\hline
+\end{tabular}
+\end{table}
 
-\subsection{Accuracy of Rotation Estimation}
+\begin{table}[!t]
+% increase table row spacing, adjust to taste
+\renewcommand{\arraystretch}{1.3}
+\caption{Cube Rotation Estimation}
+\label{table_example}
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+ & Pixel Distance from Actual &  Standard Deviation\\
+\hline
+Set 1 (14 images) & 5.0$^{\circ}$ & 6.8$^{\circ}$\\
+\hline
+Set 2 (10 images) & 10.3$^{\circ}$ & 12.9$^{\circ}$\\
+\hline
+Set 3 (10 images) & 3.3$^{\circ}$ & 3.8$^{\circ}$\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[!t]
+% increase table row spacing, adjust to taste
+\renewcommand{\arraystretch}{1.3}
+\caption{Failures}
+\label{table_example}
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+ & False Positives & Missed Cubes\\
+\hline
+Set 1 (14 images) & 0 & 0 \\
+\hline
+Set 2 (10 images) & 21 & 5\\
+\hline
+Set 3 (10 images) & 1 & 6 \\
+\hline
+\end{tabular}
+\end{table}
 
 \section{Discussion}
 
