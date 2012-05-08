@@ -558,6 +558,43 @@ This filter enhances edge boundaries very strongly, but still suffers from a bit
 Before performing template matching, we apply these filters to the template image and the target image.  Although this removes the  color information, it does allow for the template matching process to detect all cubelets indiscriminately. 
 
 \subsection{Rotational Template Matching}
+
+\begin{figure*}[!b]
+\centerline{
+\subfloat[Original Image]
+{\includegraphics[width=2.5in]{Rotation_Ex_1.png}}
+\label{fig_first_case}
+\hfil
+\subfloat[After Edge Enhancement Filter]{\includegraphics[width=2.5in]{Rotation_Ex_2.png}%
+\label{fig_second_case}}}
+\caption{Rotation Estimation - Initial Processing}
+\label{fig_sim}
+\end{figure*}
+
+\begin{figure*}[!b]
+\centerline{
+\subfloat[After Successive Blurs, Dilations, and Erosions]
+{\includegraphics[width=2.5in]{Rotation_Ex_3.png}}
+\label{fig_first_case}
+\hfil
+\subfloat[After Canny Edge Detection]{\includegraphics[width=2.5in]{Rotation_Ex_4.png}%
+\label{fig_second_case}}}
+\caption{Rotation Estimation - Cube Outlining}
+\label{fig_sim}
+\end{figure*}
+
+\begin{figure*}[!b]
+\centerline{
+\subfloat[Result of Hough Line Detection]
+{\includegraphics[width=2.5in]{Rotation_Ex_5.png}}
+\label{fig_first_case}
+\hfil
+\subfloat[Final Estimation]{\includegraphics[width=2.5in]{Rotation_Ex_6.png}%
+\label{fig_second_case}}}
+\caption{Rotation Estimation - Line Detection and Estimation}
+\label{fig_sim}
+\end{figure*}
+
 In order to handle the possibility of missing a match due to a rotation, we take each template image, rotate it by 15 degrees, and then template match that rotated version to the target image.  To accomplish the actual template matching, we are using the template matching function built into opencv, cv.MatchTemplate. The particular match value calculation equation is as follows: 
 \\[6pt]
 \begin{math} 
@@ -566,15 +603,18 @@ In order to handle the possibility of missing a match due to a rotation, we take
 \\[6pt]
 Here, $T(x,y)$ refers to a pixel value within the template image at $(x,y)$, and $I(x,y)$ refers to a pixel value in the target image. The output of this function is a grayscale image with pixel values equal to difference metric $R(x,y)$ between the local window and the template.  To find the matches in the image, we simply look for the minima within the resulting image.
 
-Once we have a list of prospective cube locations, we find the average color around the center of each match, and compare that to the color averages of each template image, selecting the smallest difference as the matching color.
-
 \subsection{Rotation Estimation}
 In order to determine the rotation of each cubes, we find try to utilize the relatively distinct edges of the cube.  We once again start by applying our edge enhancement filter to the test image.  We then blur, dilate, and erode the resulting image in order to merge the edges of each cube into a single connect component.  This is to suppress the internal features of the cube, such as the metal connectors, so that when we apply Canny edge detection to the image, we only get the outlines of the cubes.  \\
 
-Once Canny has been applied, we use OpenCV's hough line detector find the line segments present.  The detector returns lists of line segment endpoints, from which we calculate the rotation of each line segment, modulo $ \frac{\pi}{2}$ .  For each detected cube, we determine all the line segments within some radius of the cube center, then average the calculated angles for those line segments, which is assigned as the rotation angle for the cube.
+After Canny edge detection has been applied, we use OpenCV's hough line detector find the line segments present.  The detector returns lists of line segment endpoints, from which we calculate the rotation of each line segment, modulo $ \frac{\pi}{2}$ .  For each detected cube, we determine all the line segments within some radius of the cube center, then average the calculated angles for those line segments, which is assigned as the rotation angle for the cube. \\
+
+As this rotation estimation method relies solely on the ability to detect the outlines of the cube, anything that would hinder that would severely affect the accuracy of this estimation method. In our constrained, relatively clutter free environment however, this should not be a severe issue.
+
+\subsection{Color Determination}
+Once we have a list of prospective cube locations, we find the average color around the center of each match, and compare that to the color averages of each template image, selecting the smallest difference as the matching color.  This step is highly dependant upon how well the center of the the cube has been determined; a large enough offset will result in the background or a nearby cube's pixels to be picked up as part of the average color evaluation.
 
 \subsection{Depth Information}
-
+Depth data is collected using the XBox Kinect sensor.  Since the depth information matrix is in the same shape the RGB color image information, we need only the $(x,y)$ coordinate of a pixel in the image to determine its corresponding depth value in the 16-bit coupled depth image.
 
 \subsection{Match Evaluation}
 To evaluate the quality of matchings and rotation estimations, we manually go through each test image and mark down the center of each cube, the color of each cube, and an estimation of cube's rotation. This was done by rotating the image in an image editing tool until a particular cube's edge was parallel to the x-axis, then marking down the rotation angle required.\\
@@ -659,10 +699,6 @@ Set 3 (10 images) & 1 & 6 \\
 \end{table}
 
 \section{Discussion}
-In terms of actually detecting the presence of cubes, our process does do a fairly good job.  The rare cases of a cube being entirely missed in the initial detection stage tended to result from partially occluded cube profiles, or due to a cube's features being washed out by very bright light (or rendered indistinct by poor lighting).\\
-
-The color determination was not quite as accurate as we would have hoped.  This mainly occured with the clear and black cubes, which in dim lighting have somewhat similar colors.  A way to address this would be to instead compare color histograms of the a test image and a cube template.  This would differentiate the black and the clear cubes well, as the black cubes would have a spike in the lower end of the histogram, and the clear cubes would have a more spread out distribution.\\
-
 \begin{figure*}[!t]
 \centerline{
 \subfloat[From Test Set 1]
@@ -687,12 +723,13 @@ The color determination was not quite as accurate as we would have hoped.  This 
 \label{fig_sim}
 \end{figure*}
 
+In terms of actually detecting the presence of cubes, our process does do a fairly good job.  The rare cases of a cube being entirely missed in the initial detection stage tended to result from partially occluded cube profiles, or due to a cube's features being washed out by very bright light (or rendered indistinct by poor lighting).  One particular set of cases to be noted is that of the missed light-green cubes in data set three.  Upon closer observation, it seems that when the image is converted to grayscale, the metal connectors and the colored parts of the cube tend to map towards similar grayscale color values.  This made the internal features of the cube's side less distinct, and caused the cube face detection to fail.\\
+
+The color determination was not quite as accurate as we would have hoped.  This mainly occured with the clear and black cubes, which in dim lighting have somewhat similar colors.  A way to address this would be to instead compare color histograms of the a test image and a cube template.  This would differentiate the black and the clear cubes well, as the black cubes would have a spike in the lower end of the histogram, and the clear cubes would have a more spread out distribution.\\
+
 The results of the second data set were particularly worse than the rest, due to several factors.  The first issue comes from the blue cubes, which were spray painted blue for the project they were borrowed from.  As a consequence, their colors were not as consistent and their features were more subdued. This caused them to be occasionally misidentified or not identified at all.  The clutter in the scene also posed difficulty for our process.  The wires present matched the templates just enough to register as cubes, which unfortunately demonstrates that this process is not very robust in less controlled situations.\\
 
 On some occasions, the rotation estimation failed to give any estimation at all.  This was due to a lack of strong edges detected within the proximity of a cube's center point.  Thus, anything that could cause an edge to be less distinct could result in a failure of rotation detection.
-
-
-
 
 \subsection{Further Work}
 The major limitation of our approach is that it requires a fixed overhead view of the scene.  This constraint allowed us to use template matching to find cubelets easily within the scene, limits its usefulness on a robot that can look around in its environment.  Our methods do not work very well if the cubes were to be seen from non-normal angle.  This change in perspective would require us to have a more thorough method of pose estimation.  \\
@@ -703,7 +740,7 @@ Given a set of matching points between a training image and the target image, we
 
 
 \section{Conclusion}
-
+We believe that the work done has demonstrated that template matching can be an effective method of object detection in the constrained circumstances tested.  In designing and testing this method, we have also identified concerns regarding object detection and recognition that can be addressed in further research that would extend the capabilities of this system past its operating constraints.
 
 \subsection{Subsection Heading Here}
 Subsection text here.
