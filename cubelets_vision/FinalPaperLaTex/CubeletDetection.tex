@@ -1,4 +1,3 @@
-
 %% bare_conf.tex
 %% V1.3
 %% 2007/01/11
@@ -127,13 +126,13 @@
 % *** GRAPHICS RELATED PACKAGES ***
 %
 \ifCLASSINFOpdf
-  % \usepackage[pdftex]{graphicx}
+\usepackage[pdftex]{graphicx}
   % declare the path(s) where your graphic files are
   % \graphicspath{{../pdf/}{../jpeg/}}
   % and their extensions so you won't have to specify these with
   % every instance of \includegraphics
   % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
-\else
+%\else
   % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
   % will default to the driver specified in the system graphics.cfg if no
   % driver is specified.
@@ -265,7 +264,7 @@
 
 
 %\usepackage[caption=false]{caption}
-\usepackage[font=footnotesize]{subfig}
+%\usepackage[font=footnotesize]{subfig}
 % subfig.sty, also written by Steven Douglas Cochran, is the modern
 % replacement for subfigure.sty. However, subfig.sty requires and
 % automatically loads Axel Sommerfeldt's caption.sty which will override
@@ -275,7 +274,7 @@
 % IEEEtran.cls handing of captions. Version 1.3 (2005/06/28) and later 
 % (recommended due to many improvements over 1.2) of subfig.sty supports
 % the caption=false option directly:
-%\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage[caption=false,font=footnotesize]{subfig}
 %
 % The latest version and documentation can be obtained at:
 % http://www.ctan.org/tex-archive/macros/latex/contrib/subfig/
@@ -287,7 +286,7 @@
 
 % *** FLOAT PACKAGES ***
 %
-%\usepackage{fixltx2e}
+\usepackage{fixltx2e}
 % fixltx2e, the successor to the earlier fix2col.sty, was written by
 % Frank Mittelbach and David Carlisle. This package corrects a few problems
 % in the LaTeX2e kernel, the most notable of which is that in current
@@ -299,7 +298,7 @@
 
 
 
-%\usepackage{stfloats}
+\usepackage{stfloats}
 % stfloats.sty was written by Sigitas Tolusis. This package gives LaTeX2e
 % the ability to do double column floats at the bottom of the page as well
 % as the top. (e.g., "\begin{figure*}[!b]" is not normally possible in
@@ -407,7 +406,6 @@ We describe a method for detecting and localizing Modular Robotics Cubelets in a
 
 
 
-
 % For peer review papers, you can put extra information on the cover
 % page as needed:
 % \ifCLASSOPTIONpeerreview
@@ -422,14 +420,14 @@ We describe a method for detecting and localizing Modular Robotics Cubelets in a
 
 \section{Introduction}
 % no \IEEEPARstart
-The purpose of this research is to produce a vision subsystem to the system necessary to accomplish the overall goal of 'robots building robots'.  The 'robots building robots' project involves the assembly of robots made up of Modular Robotics Cubelets. Cubelets are a robotic toy consisting of a set of small cubes. Each cube, or Cubelet, is approximately 50mm on a side. Cubelets attach to one another by way of keyed magnetic faces. Each Cubelet contains a small computer. A Cubelet may be an actuator, a sensor, a thinking block or a battery block. Actuators have an actuation face and respond to incoming signals. Sensors have a sensor face and sense the environment and send out a signal. Thinking blocks change the signal received from neighbors in a predetermined way, e.g. a Inverse block inverts the signal received. The battery block provides power.
-\\[6pt]
-For the purposes of the overall goal of 'robots building robots', we are concerned with autonmously assembling the Cubelets into a predetermined structure that forms a robot. We assume that the Cubelets start scattered over the work surface, a flat, featureless surface. We intend to build the construction using the Clam arm, a small robotic arm intended for research, with a suitable grasper. We also intend to use ROS (Robot Operating System) to bring together the entire system.
-\\[6pt]
-We assume that a vision subsystem is a necessary subsystem of the overall system. The vision subsystem will be used to direct the arm and grasper. The vision subsystem reifies visual and aligned depth camera data into an ontology that represents the arrangement of Cubelets on the work surface. This ontology can then be consumed by other parts of the system.
-\\[6pt]
-Our engineering solution provides a partial technology for providing a useful ontology. The ontology should contain position and rotation for each Cubelet as well as the type of Cubelet. Our technology aims to provide two dimensional position and rotation information and partial information on the type of Cubelet at a reasonable frame rate.
-\\[6pt]
+The purpose of this research is to produce a vision subsystem to the system necessary to accomplish the overall goal of 'robots building robots'.  The 'robots building robots' project involves the assembly of robots made up of Modular Robotics Cubelets. Cubelets are a robotic toy consisting of a set of small cubes. Each cube, or Cubelet, is approximately 50mm on a side. Cubelets attach to one another by way of keyed magnetic faces. Each Cubelet contains a small computer. A Cubelet may be an actuator, a sensor, a thinking block or a battery block. Actuators have an actuation face and respond to incoming signals. Sensors have a sensor face and sense the environment and send out a signal. Thinking blocks change the signal received from neighbors in a predetermined way, e.g. a Inverse block inverts the signal received. The battery block provides power.\\
+
+For the purposes of the overall goal of 'robots building robots', we are concerned with autonmously assembling the Cubelets into a predetermined structure that forms a robot. We assume that the Cubelets start scattered over the work surface, a flat, featureless surface. We intend to build the construction using the Clam arm, a small robotic arm intended for research, with a suitable grasper. We also intend to use ROS (Robot Operating System) to bring together the entire system.\\
+
+We assume that a vision subsystem is a necessary subsystem of the overall system. The vision subsystem will be used to direct the arm and grasper. The vision subsystem reifies visual and aligned depth camera data into an ontology that represents the arrangement of Cubelets on the work surface. This ontology can then be consumed by other parts of the system.\\
+
+Our engineering solution provides a partial technology for providing a useful ontology. The ontology should contain position and rotation for each Cubelet as well as the type of Cubelet. Our technology aims to provide two dimensional position and rotation information and partial information on the type of Cubelet at a reasonable frame rate.\\
+
 We hypothesize that template matching on images preprocessed with a novel line detection algorithm can provide position and orientation data. We hypothesize that color matching on matched areas can provide partial information on the type of Cubelet.
 
 \subsection{Background}
@@ -470,15 +468,29 @@ The problem of providing the desired ontology is largely one of object detection
 % The subfigure.sty package works much the same way, except \subfigure is
 % used instead of \subfloat.
 %
-%\begin{figure*}[!t]
-%\centerline{\subfloat[Case I]\includegraphics[width=2.5in]{subfigcase1}%
-%\label{fig_first_case}}
-%\hfil
-%\subfloat[Case II]{\includegraphics[width=2.5in]{subfigcase2}%
-%\label{fig_second_case}}}
-%\caption{Simulation results}
-%\label{fig_sim}
-%\end{figure*}
+\begin{figure*}[!t]
+\centerline{
+\subfloat[Canny Edge Detection]
+{\includegraphics[width=2.5in]{Canny_50_100_c.jpg}}
+\label{fig_first_case}
+\hfil
+\subfloat[Sobel Edge Detection]{\includegraphics[width=2.5in]{Sobel_1_1_c}%
+\label{fig_second_case}}}
+\caption{Edge Detectors}
+\label{fig_sim}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centerline{
+\subfloat[Initial Edge Enhancement Filter]
+{\includegraphics[width=2.5in]{vh1_c.jpg}}
+\label{fig_first_case}
+\hfil
+\subfloat[Low Noise Edge Enhancement Filter]{\includegraphics[width=2.5in]{vh2_c.jpg}%
+\label{fig_second_case}}}
+\caption{Our Edge Enhancement Filters}
+\label{fig_sim}
+\end{figure*}
 %
 % Note that often IEEE papers with subfigures do not employ subfigure
 % captions (using the optional argument to \subfloat), but instead will
@@ -518,20 +530,18 @@ The problem of providing the desired ontology is largely one of object detection
 % command of the stfloats package.
 
 \section{Matters and Materials}
-Our experimental setup consists of a Xbox Kinect camera mounted 65cm above the work surface. This distance is far enough for the depth sensor to work even if the blocks are stacked, but close enough to make out features on the faces of the Cubelets. The work surface is covered in white paper. The lighting is not controlled but is normal office lighting.
-\\[6pt]
-We generated two sets of 20 images each under the same setup and lighting conditions. Each image takes a picture of an arrangement of Cubelets. The Cubelet arrangements are determined by us. The first set was used as a training set to train the vision subsystem. The second set was used as a test set to generate the experimental results.
-\\[6pt]
+Our experimental setup consists of a Xbox Kinect camera mounted 65cm above the work surface. This distance is far enough for the depth sensor to work even if the blocks are stacked, but close enough to make out features on the faces of the Cubelets. The work surface is covered in white paper. The lighting is not controlled but is normal office lighting.\\
+
+We generated three sets of 10-14 images each, under the same setup and lighting conditions. Each image takes a picture of an arrangement of Cubelets. The Cubelet arrangements are randomly determined by us. The first set was used as a training set to train the vision subsystem. The second set was used as a test set to generate the experimental results.\\
+
 Our software is written in Python and uses ROS with OpenCV and openni\_kinect.
 
 \subsection{General Methods}
 To manage the information related to the templates, we've created a single file with a variety of template images, scaled to approximately the same size.  In addition to this, we have an xml file marking the (x,y) locations of each template cube within the larger image, as well as the idea template radius for that cube.  For the actual templates, we use the region around the circlular portion of the cube face.    
 
 \subsection{Edge Enhancement Filter}
-In order to better match the cubes, specifically the clear cubes, we found it necesary to apply a form of edge detection/enhancement to the images. Without doing this, the features of the clear cubes would not be very distinct, making matching of any kind very difficult.  We found the Canny edge detector to be too imprecise; a slight adjustment to the upper and lower edge merge thresholds would change the shape of fine detail edges. Sobel suffered from a different problem in that the edges that it did detect were very weakly enhanced.  In order to improve the edge enhancement, we  wrote our own filter which is very similar to how Sobel operates.  Shown below are examples of sobel and canny run on our test images, as well as the two versions of our edge enhancement filter.  
-\\[6pt]
-[show images] 
-\\[6pt]
+In order to better match the cubes, specifically the clear cubes, we found it necesary to apply a form of edge detection/enhancement to the images. Without doing this, the features of the clear cubes would not be very distinct, making matching of any kind very difficult.  We found the Canny edge detector to be too imprecise; a slight adjustment to the upper and lower edge merge thresholds would change the shape of fine detail edges. Sobel suffered from a different problem in that the edges that it did detect were very weakly enhanced.  In order to improve the edge enhancement, we  wrote our own filter which is very similar to how Sobel operates.  Shown are examples of sobel and canny run on our test images, as well as the two versions of our edge enhancement filter.  \\
+
 The first variant of the filter behaves as follows: for each pixel, the value of at pixel becomes the product of the difference between the pixels above and below and the difference between the pixel to the left and the right.
 \\[6pt]
 \begin{math} 
@@ -545,36 +555,38 @@ This filter enhances edge boundaries very strongly, but still suffers from a bit
 \end{math} 
 \\[6pt]
 
-[ show example images of Canny, Sobel, and our Filters]
-
-Before performing template matching, we apply these filters to the template image and the target image.  Although this removes the  color information, it does allow for the template matching process to detect all cubelets indiscrimitately. 
+Before performing template matching, we apply these filters to the template image and the target image.  Although this removes the  color information, it does allow for the template matching process to detect all cubelets indiscriminately. 
 
 \subsection{Rotational Template Matching}
 In order to handle the possibility of missing a match due to a rotation, we take each template image, rotate it by 15 degrees, and then template match that rotated version to the target image.  To accomplish the actual template matching, we are using the template matching function built into opencv, cv.MatchTemplate. The particular match value calculation equation is as follows: 
 \\[6pt]
-[show the equation from the opencv python doc]
+\begin{math} 
+	R(x,y) = \frac{\sum_{x',y'}(T(x',y')-I(x+x',y+y'))^{2}}{\sqrt{\sum_{x',y'}T(x',y')^{2}\cdot \sum_{x',y'}I(x+x',y+y')^{2} }}
+\end{math} 
 \\[6pt]
-The output of this function is a grayscale image with pixel values equal to difference metric between the local window and the template.  To find the matches in the image, we simply look for the minima within that image.
+Here, $T(x,y)$ refers to a pixel value within the template image at $(x,y)$, and $I(x,y)$ refers to a pixel value in the target image. The output of this function is a grayscale image with pixel values equal to difference metric $R(x,y)$ between the local window and the template.  To find the matches in the image, we simply look for the minima within the resulting image.
 
 Once we have a list of prospective cube locations, we find the average color around the center of each match, and compare that to the color averages of each template image, selecting the smallest difference as the matching color.
 
 \subsection{Rotation Estimation}
-In order to determine the rotation of each cubes, we find try to utilize the relatively distinct edges of the cube.  We once again start by applying our edge enhancement filter to the test image.  We then blur, dilate, and erode the resulting image in order to merge the edges of each cube into a single connect component.  This is to suppress the internal features of the cube, so that when we apply Canny edge detection to the image, we only get the outlines of the cubes.  Once Canny has been applied, we use OpenCV's hough line detector find the line segments present.  The detector returns lists of line segment endpoints, from which we calculate the rotation of each line segment, modulo $ \frac{\pi}{2}$ .  For each detected cube, we located all the line segments within some radius of the cube center, then average the calculated angles for those line segments, which is assigned as the rotation angle for the cube.
+In order to determine the rotation of each cubes, we find try to utilize the relatively distinct edges of the cube.  We once again start by applying our edge enhancement filter to the test image.  We then blur, dilate, and erode the resulting image in order to merge the edges of each cube into a single connect component.  This is to suppress the internal features of the cube, such as the metal connectors, so that when we apply Canny edge detection to the image, we only get the outlines of the cubes.  \\
+
+Once Canny has been applied, we use OpenCV's hough line detector find the line segments present.  The detector returns lists of line segment endpoints, from which we calculate the rotation of each line segment, modulo $ \frac{\pi}{2}$ .  For each detected cube, we determine all the line segments within some radius of the cube center, then average the calculated angles for those line segments, which is assigned as the rotation angle for the cube.
 
 \subsection{Depth Information}
 
+
 \subsection{Match Evaluation}
-To evaluate the quality of matchings and rotation estimations, we manually go through each test image and mark down the center of each cube, the color of each cube, and an estimation of cube's rotation. This was done by rotating the image in an image editing tool until a particular cube's edge was parallel to the x-axis, then marking down the rotation angle required.
-[6pt]
-The algorithm was run on three different data sets, each generated at different portions of the development process.  The first data set was taken with a a webcam, with the cubes sitting on a wood panel background.  The second data set was again taken with a webcam, but with the cubes sitting on a white-papered background.  The final data set was taken with a kinect sensor's camera, over a clean table background.
+To evaluate the quality of matchings and rotation estimations, we manually go through each test image and mark down the center of each cube, the color of each cube, and an estimation of cube's rotation. This was done by rotating the image in an image editing tool until a particular cube's edge was parallel to the x-axis, then marking down the rotation angle required.\\
 
 \section{Results}
+The algorithm was run on three different data sets, each generated at different portions of the development process.  The first data set was taken with a a webcam, with the a limited set of cube types sitting on a wood panel background.  The second data set was again taken with a webcam, but with the cubes sitting on a white-papered background.  This test set also used blue-spray-painted cubelets, as the other cubelets were unavailable during the testing period. The final data set was taken with a kinect sensor's camera, over a clean table background with a fairly bright light source, with the full set of colored cubelets.
 
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
 \caption{Cube Center Localization}
-\label{table_example}
+\label{table_1}
 \centering
 \begin{tabular}{|c|c|c|}
 \hline
@@ -593,7 +605,7 @@ Set 3 (10 images) & 3.1 & 2.7\\
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
 \caption{Color Determination Accuracy}
-\label{table_example}
+\label{table_2}
 \centering
 \begin{tabular}{|c|c|}
 \hline
@@ -612,7 +624,7 @@ Set 3 (10 images) & 84\% \\
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
 \caption{Cube Rotation Estimation}
-\label{table_example}
+\label{table_3}
 \centering
 \begin{tabular}{|c|c|c|}
 \hline
@@ -631,7 +643,7 @@ Set 3 (10 images) & 3.3$^{\circ}$ & 3.8$^{\circ}$\\
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
 \caption{Failures}
-\label{table_example}
+\label{table_4}
 \centering
 \begin{tabular}{|c|c|c|}
 \hline
@@ -647,14 +659,46 @@ Set 3 (10 images) & 1 & 6 \\
 \end{table}
 
 \section{Discussion}
+In terms of actually detecting the presence of cubes, our process does do a fairly good job.  The rare cases of a cube being entirely missed in the initial detection stage tended to result from partially occluded cube profiles, or due to a cube's features being washed out by very bright light (or rendered indistinct by poor lighting).\\
 
-The color determination was not quite as accurate as we would have hoped.  This mainly occured with the clear and black cubes, which in dim lighting have somewhat similar colors.  A way to address this would be to instead compare color histograms of the a test image and a cube template.  This would differentiate the black and the clear cubes well, as the black cubes would have a spike in the lower end of the histogram, and the clear cubes would have a more spread out distribution.
+The color determination was not quite as accurate as we would have hoped.  This mainly occured with the clear and black cubes, which in dim lighting have somewhat similar colors.  A way to address this would be to instead compare color histograms of the a test image and a cube template.  This would differentiate the black and the clear cubes well, as the black cubes would have a spike in the lower end of the histogram, and the clear cubes would have a more spread out distribution.\\
+
+\begin{figure*}[!t]
+\centerline{
+\subfloat[From Test Set 1]
+{\includegraphics[width=2.5in]{ds1p8.jpg}}
+\label{fig_first_case}
+\hfil
+\subfloat[From Test Set 3]{\includegraphics[width=2.5in]{ds3p9.jpg}%
+\label{fig_second_case}}}
+\caption{Successful Detections and Estimations}
+\label{fig_sim}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centerline{
+\subfloat[From Test Set 1]
+{\includegraphics[width=2.5in]{ds2p7.jpg}}
+\label{fig_first_case}
+\hfil
+\subfloat[From Test Set 3]{\includegraphics[width=2.5in]{ds3p8.jpg}%
+\label{fig_second_case}}}
+\caption{Unsuccessful Detections and Estimations}
+\label{fig_sim}
+\end{figure*}
+
+The results of the second data set were particularly worse than the rest, due to several factors.  The first issue comes from the blue cubes, which were spray painted blue for the project they were borrowed from.  As a consequence, their colors were not as consistent and their features were more subdued. This caused them to be occasionally misidentified or not identified at all.  The clutter in the scene also posed difficulty for our process.  The wires present matched the templates just enough to register as cubes, which unfortunately demonstrates that this process is not very robust in less controlled situations.\\
+
+On some occasions, the rotation estimation failed to give any estimation at all.  This was due to a lack of strong edges detected within the proximity of a cube's center point.  Thus, anything that could cause an edge to be less distinct could result in a failure of rotation detection.
+
+
+
 
 \subsection{Further Work}
-The major limitation of our approach is that it requires a fixed overhead view of the scene.  This constraint allowed us to use template matching to find cubelets easily within the scene, limits its usefulness on a robot that can look around in its environment.  Our methods do not work very well if the cubes were to be seen from non-normal angle.  This change in perspective would require us to have a more thorough method of pose estimation.  
-\\[6pt]
-In order to address these concerns, we would need to find an object recognition method that is robust against scale, rotation, brightness differences, and affine transformations.  As we have already found that SURF is insufficient, we would investigate matching methods using other feature detectors, such as MSER (Maximally-Stable Extremal Region), which is very robust against affine transformations.
-\\[6pt]
+The major limitation of our approach is that it requires a fixed overhead view of the scene.  This constraint allowed us to use template matching to find cubelets easily within the scene, limits its usefulness on a robot that can look around in its environment.  Our methods do not work very well if the cubes were to be seen from non-normal angle.  This change in perspective would require us to have a more thorough method of pose estimation.  \\
+
+In order to address these concerns, we would need to find an object recognition method that is robust against scale, rotation, brightness differences, and affine transformations.  As we have already found that SURF is insufficient, we would investigate matching methods using other feature detectors, such as MSER (Maximally-Stable Extremal Region), which is very robust against affine transformations.\\
+
 Given a set of matching points between a training image and the target image, we could find the transform relating those sets of points, and calculate the pose of those points in the camera space, provided that the camera parameters were known.  Many different methods for doing this exist, including POSIT, which works on four non-coplanar points.
 
 
