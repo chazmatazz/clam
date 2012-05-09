@@ -468,6 +468,7 @@ The problem of providing the desired ontology is largely one of object detection
 % The subfigure.sty package works much the same way, except \subfigure is
 % used instead of \subfloat.
 %
+
 \begin{figure*}[!t]
 \centerline{
 \subfloat[Canny Edge Detection]
@@ -491,6 +492,7 @@ The problem of providing the desired ontology is largely one of object detection
 \caption{Our Edge Enhancement Filters}
 \label{fig_sim}
 \end{figure*}
+
 %
 % Note that often IEEE papers with subfigures do not employ subfigure
 % captions (using the optional argument to \subfloat), but instead will
@@ -539,6 +541,53 @@ Our software is written in Python and uses ROS with OpenCV and openni\_kinect.
 \subsection{General Methods}
 To manage the information related to the templates, we've created a single file with a variety of template images, scaled to approximately the same size.  In addition to this, we have an xml file marking the (x,y) locations of each template cube within the larger image, as well as the idea template radius for that cube.  For the actual templates, we use the region around the circlular portion of the cube face.    
 
+\subsection{SURF Feature Detection}
+The first method we attempted was trying to match SURF features between a template image consisting of a single cube and test images of a scene containing one or more Cubelets. Initially it seemed like there were plenty of features on each Cubelet, but most were not on stable aspects of the image. This resulted from the fact that SURF works best on detailed images and Cubelets are too regular. \\
+
+We also attempted to use SURF features to detect the Cubelets through their rotational symmetry.  Because they are rotationally symmetrical at 90 degrees, we assumed this would make the features appear more stable. This method has been effective for other scenarios \cite{Loy_Eklundh}, but the lack of stable features in Cubelets was still too much of a problem for it to work here.\\ 
+
+After both these methods failed to work we moved away from SURF to begin working with template matching in different forms. \\
+
+{\includegraphics[width=2.5in]{surf.png}} \\
+
+
+\begin{figure*}[!t]
+\centerline{
+\subfloat[Original Image]
+{\includegraphics[width=2.5in]{Rotation_Ex_1.png}}
+\label{fig_first_case}
+\hfil
+\subfloat[After Edge Enhancement Filter]{\includegraphics[width=2.5in]{Rotation_Ex_2.png}%
+\label{fig_second_case}}}
+\caption{Rotation Estimation - Initial Processing}
+\label{fig_sim}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centerline{
+\subfloat[After Successive Blurs, Dilations, and Erosions]
+{\includegraphics[width=2.5in]{Rotation_Ex_3.png}}
+\label{fig_first_case}
+\hfil
+\subfloat[After Canny Edge Detection]{\includegraphics[width=2.5in]{Rotation_Ex_4.png}%
+\label{fig_second_case}}}
+\caption{Rotation Estimation - Cube Outlining}
+\label{fig_sim}
+\end{figure*}
+
+\begin{figure*}[!h]
+\centerline{
+\subfloat[Result of Hough Line Detection]
+{\includegraphics[width=2.5in]{Rotation_Ex_5.png}}
+\label{fig_first_case}
+\hfil
+\subfloat[Final Estimation]{\includegraphics[width=2.5in]{Rotation_Ex_6.png}%
+\label{fig_second_case}}}
+\caption{Rotation Estimation - Line Detection and Estimation}
+\label{fig_sim}
+\end{figure*} 
+
+
 \subsection{Edge Enhancement Filter}
 In order to better match the cubes, specifically the clear cubes, we found it necesary to apply a form of edge detection/enhancement to the images. Without doing this, the features of the clear cubes would not be very distinct, making matching of any kind very difficult.  We found the Canny edge detector to be too imprecise; a slight adjustment to the upper and lower edge merge thresholds would change the shape of fine detail edges. Sobel suffered from a different problem in that the edges that it did detect were very weakly enhanced.  In order to improve the edge enhancement, we  wrote our own filter which is very similar to how Sobel operates.  Shown are examples of sobel and canny run on our test images, as well as the two versions of our edge enhancement filter.  \\
 
@@ -559,43 +608,7 @@ Before performing template matching, we apply these filters to the template imag
 
 \subsection{Rotational Template Matching}
 
-\begin{figure*}[!b]
-\centerline{
-\subfloat[Original Image]
-{\includegraphics[width=2.5in]{Rotation_Ex_1.png}}
-\label{fig_first_case}
-\hfil
-\subfloat[After Edge Enhancement Filter]{\includegraphics[width=2.5in]{Rotation_Ex_2.png}%
-\label{fig_second_case}}}
-\caption{Rotation Estimation - Initial Processing}
-\label{fig_sim}
-\end{figure*}
-
-\begin{figure*}[!b]
-\centerline{
-\subfloat[After Successive Blurs, Dilations, and Erosions]
-{\includegraphics[width=2.5in]{Rotation_Ex_3.png}}
-\label{fig_first_case}
-\hfil
-\subfloat[After Canny Edge Detection]{\includegraphics[width=2.5in]{Rotation_Ex_4.png}%
-\label{fig_second_case}}}
-\caption{Rotation Estimation - Cube Outlining}
-\label{fig_sim}
-\end{figure*}
-
-\begin{figure*}[!b]
-\centerline{
-\subfloat[Result of Hough Line Detection]
-{\includegraphics[width=2.5in]{Rotation_Ex_5.png}}
-\label{fig_first_case}
-\hfil
-\subfloat[Final Estimation]{\includegraphics[width=2.5in]{Rotation_Ex_6.png}%
-\label{fig_second_case}}}
-\caption{Rotation Estimation - Line Detection and Estimation}
-\label{fig_sim}
-\end{figure*}
-
-In order to handle the possibility of missing a match due to a rotation, we take each template image, rotate it by 15 degrees, and then template match that rotated version to the target image.  To accomplish the actual template matching, we are using the template matching function built into opencv, cv.MatchTemplate. The particular match value calculation equation is as follows: 
+In order to handle the possibility of missing a match due to a rotation, we take each template image, rotate it by 15 degrees, and then template match that rotated version to the target image.  To accomplish the actual template matching, we are using the template matching function built into opencv, cv.MatchTemplate. The particular match value calculation equation we are using, CV\_TM\_SQDIFF\_NORMED,  is as follows: 
 \\[6pt]
 \begin{math} 
 	R(x,y) = \frac{\sum_{x',y'}(T(x',y')-I(x+x',y+y'))^{2}}{\sqrt{\sum_{x',y'}T(x',y')^{2}\cdot \sum_{x',y'}I(x+x',y+y')^{2} }}
@@ -611,7 +624,7 @@ After Canny edge detection has been applied, we use OpenCV's hough line detector
 As this rotation estimation method relies solely on the ability to detect the outlines of the cube, anything that would hinder that would severely affect the accuracy of this estimation method. In our constrained, relatively clutter free environment however, this should not be a severe issue.
 
 \subsection{Color Determination}
-Once we have a list of prospective cube locations, we find the average color around the center of each match, and compare that to the color averages of each template image, selecting the smallest difference as the matching color.  This step is highly dependant upon how well the center of the the cube has been determined; a large enough offset will result in the background or a nearby cube's pixels to be picked up as part of the average color evaluation.
+Once we have a list of prospective cube locations, we find the average color around the center of each match, and compare that to the color averages of each template image, selecting the smallest difference as the matching color.  This step is highly dependant upon how well the center of the the cube has been determined; a large enough offset will result in the background or a nearby cube's pixels to be picked up as part of the average color evaluation. By filtering out the background color and the color of the magnetic tabs this problem could possibly be alleviated.
 
 \subsection{Depth Information}
 Depth data is collected using the XBox Kinect sensor.  Since the depth information matrix is in the same shape the RGB color image information, we need only the $(x,y)$ coordinate of a pixel in the image to determine its corresponding depth value in the 16-bit coupled depth image.
@@ -619,8 +632,52 @@ Depth data is collected using the XBox Kinect sensor.  Since the depth informati
 \subsection{Match Evaluation}
 To evaluate the quality of matchings and rotation estimations, we manually go through each test image and mark down the center of each cube, the color of each cube, and an estimation of cube's rotation. This was done by rotating the image in an image editing tool until a particular cube's edge was parallel to the x-axis, then marking down the rotation angle required.\\
 
+
+
 \section{Results}
 The algorithm was run on three different data sets, each generated at different portions of the development process.  The first data set was taken with a a webcam, with the a limited set of cube types sitting on a wood panel background.  The second data set was again taken with a webcam, but with the cubes sitting on a white-papered background.  This test set also used blue-spray-painted cubelets, as the other cubelets were unavailable during the testing period. The final data set was taken with a kinect sensor's camera, over a clean table background with a fairly bright light source, with the full set of colored cubelets.
+
+\begin{figure*}[!t]
+\centerline{
+\subfloat[From Test Set 1]
+{\includegraphics[width=2.5in]{ds1p8.jpg}}
+\label{fig_first_case}
+\hfil
+\subfloat[From Test Set 3]{\includegraphics[width=2.5in]{ds3p9.jpg}%
+\label{fig_second_case}}}
+\caption{Successful Detections and Estimations}
+\label{fig_sim}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centerline{
+\subfloat[From Test Set 2]
+{\includegraphics[width=2.5in]{ds2p7.jpg}}
+\label{fig_first_case}
+\hfil
+\subfloat[From Test Set 3]{\includegraphics[width=2.5in]{ds3p8.jpg}%
+\label{fig_second_case}}}
+\caption{Unsuccessful Detections and Estimations}
+\label{fig_sim}
+\end{figure*}
+
+\section{Discussion}
+
+
+In terms of actually detecting the presence of cubes, our process does do a fairly good job.  The rare cases of a cube being entirely missed in the initial detection stage tended to result from partially occluded cube profiles, or due to a cube's features being washed out by very bright light (or rendered indistinct by poor lighting).  One particular set of cases to be noted is that of the missed light-green cubes in data set three.  Upon closer observation, it seems that when the image is converted to grayscale, the metal connectors and the colored parts of the cube tend to map towards similar grayscale color values.  This made the internal features of the cube's side less distinct, and caused the cube face detection to fail.\\
+
+The color determination was not quite as accurate as we would have hoped.  This mainly occured with the clear and black cubes, which in dim lighting have somewhat similar colors.  A way to address this would be to instead compare color histograms of the a test image and a cube template.  This would differentiate the black and the clear cubes well, as the black cubes would have a spike in the lower end of the histogram, and the clear cubes would have a more spread out distribution.\\
+
+The results of the second data set were particularly worse than the rest, due to several factors.  The first issue comes from the blue cubes, which were spray painted blue for the project they were borrowed from.  As a consequence, their colors were not as consistent and their features were more subdued. This caused them to be occasionally misidentified or not identified at all.  The clutter in the scene also posed difficulty for our process.  The wires present matched the templates just enough to register as cubes, which unfortunately demonstrates that this process is not very robust in less controlled situations.\\
+
+On some occasions, the rotation estimation failed to give any estimation at all.  This was due to a lack of strong edges detected within the proximity of a cube's center point.  Thus, anything that could cause an edge to be less distinct could result in a failure of rotation detection.  Cubelets that were completely surrounded were completely prone to this, but both surrounded Cubelets and less distinct edge issues could possibly be solved by comparing to Cubelets that were close enough that they were likely attached to the undetermined Cubelet.
+
+\subsection{Further Work}
+The major limitation of our approach is that it requires a fixed overhead view of the scene.  This constraint allowed us to use template matching to find cubelets easily within the scene, limits its usefulness on a robot that can look around in its environment.  Our methods do not work very well if the cubes were to be seen from non-normal angle.  This change in perspective would require us to have a more thorough method of pose estimation.  \\
+
+In order to address these concerns, we would need to find an object recognition method that is robust against scale, rotation, brightness differences, and affine transformations.  As we have already found that SURF is insufficient, we would investigate matching methods using other feature detectors, such as MSER (Maximally-Stable Extremal Region), which is very robust against affine transformations.\\
+
+Given a set of matching points between a training image and the target image, we could find the transform relating those sets of points, and calculate the pose of those points in the camera space, provided that the camera parameters were known.  Many different methods for doing this exist, including POSIT, which works on four non-coplanar points.
 
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -698,49 +755,9 @@ Set 3 (10 images) & 1 & 6 \\
 \end{tabular}
 \end{table}
 
-\section{Discussion}
-\begin{figure*}[!t]
-\centerline{
-\subfloat[From Test Set 1]
-{\includegraphics[width=2.5in]{ds1p8.jpg}}
-\label{fig_first_case}
-\hfil
-\subfloat[From Test Set 3]{\includegraphics[width=2.5in]{ds3p9.jpg}%
-\label{fig_second_case}}}
-\caption{Successful Detections and Estimations}
-\label{fig_sim}
-\end{figure*}
-
-\begin{figure*}[!t]
-\centerline{
-\subfloat[From Test Set 1]
-{\includegraphics[width=2.5in]{ds2p7.jpg}}
-\label{fig_first_case}
-\hfil
-\subfloat[From Test Set 3]{\includegraphics[width=2.5in]{ds3p8.jpg}%
-\label{fig_second_case}}}
-\caption{Unsuccessful Detections and Estimations}
-\label{fig_sim}
-\end{figure*}
-
-In terms of actually detecting the presence of cubes, our process does do a fairly good job.  The rare cases of a cube being entirely missed in the initial detection stage tended to result from partially occluded cube profiles, or due to a cube's features being washed out by very bright light (or rendered indistinct by poor lighting).  One particular set of cases to be noted is that of the missed light-green cubes in data set three.  Upon closer observation, it seems that when the image is converted to grayscale, the metal connectors and the colored parts of the cube tend to map towards similar grayscale color values.  This made the internal features of the cube's side less distinct, and caused the cube face detection to fail.\\
-
-The color determination was not quite as accurate as we would have hoped.  This mainly occured with the clear and black cubes, which in dim lighting have somewhat similar colors.  A way to address this would be to instead compare color histograms of the a test image and a cube template.  This would differentiate the black and the clear cubes well, as the black cubes would have a spike in the lower end of the histogram, and the clear cubes would have a more spread out distribution.\\
-
-The results of the second data set were particularly worse than the rest, due to several factors.  The first issue comes from the blue cubes, which were spray painted blue for the project they were borrowed from.  As a consequence, their colors were not as consistent and their features were more subdued. This caused them to be occasionally misidentified or not identified at all.  The clutter in the scene also posed difficulty for our process.  The wires present matched the templates just enough to register as cubes, which unfortunately demonstrates that this process is not very robust in less controlled situations.\\
-
-On some occasions, the rotation estimation failed to give any estimation at all.  This was due to a lack of strong edges detected within the proximity of a cube's center point.  Thus, anything that could cause an edge to be less distinct could result in a failure of rotation detection.
-
-\subsection{Further Work}
-The major limitation of our approach is that it requires a fixed overhead view of the scene.  This constraint allowed us to use template matching to find cubelets easily within the scene, limits its usefulness on a robot that can look around in its environment.  Our methods do not work very well if the cubes were to be seen from non-normal angle.  This change in perspective would require us to have a more thorough method of pose estimation.  \\
-
-In order to address these concerns, we would need to find an object recognition method that is robust against scale, rotation, brightness differences, and affine transformations.  As we have already found that SURF is insufficient, we would investigate matching methods using other feature detectors, such as MSER (Maximally-Stable Extremal Region), which is very robust against affine transformations.\\
-
-Given a set of matching points between a training image and the target image, we could find the transform relating those sets of points, and calculate the pose of those points in the camera space, provided that the camera parameters were known.  Many different methods for doing this exist, including POSIT, which works on four non-coplanar points.
-
-
 \section{Conclusion}
 We believe that the work done has demonstrated that template matching can be an effective method of object detection in the constrained circumstances tested.  In designing and testing this method, we have also identified concerns regarding object detection and recognition that can be addressed in further research that would extend the capabilities of this system past its operating constraints.
+
 
 \subsection{Subsection Heading Here}
 Subsection text here.
@@ -789,9 +806,13 @@ The authors would like to thank...
 % (used to reserve space for the reference number labels box)
 \begin{thebibliography}{1}
 
-\bibitem{IEEEhowto:kopka}
-H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
-  0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
+%\bibitem{IEEEhowto:kopka}
+%H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
+%  0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
+
+\bibitem{Loy_Eklundh}
+G. Loy and J. Eklundh, \emph{Detecting Symmetry and Symmetric Constellations of Features}
+\relax ECCV 2006, Part II, LNCS 3952, pp. 508-–521, 2006.
 
 \end{thebibliography}
 
@@ -800,5 +821,3 @@ H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
 
 % that's all folks
 \end{document}
-
-
