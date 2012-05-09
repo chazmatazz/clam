@@ -545,7 +545,7 @@ One image from each set was used as ground truth. For this image, we hand-labele
 \subsection{SURF Feature Detection}
 The first method we attempted was trying to match SURF features between a template image consisting of a single cube and test images of a scene containing one or more Cubelets. We were able to obtain many features for each Cubelet. The first issue we found was the 4-way rotational symmetry of the Cubelets' faces caused erroneous feature matches. In an effort to fix this problem, we selected only features on one quarter of the face. However, we found that even then the features were too easily confused with each other, i.e. the features were not stable.\\
 
-We also attempted to use SURF features to detect the Cubelets through their rotational symmetry.  Because they are rotationally symmetrical at 90 degrees, we assumed this would make the features appear more stable. This method has been effective for other scenarios \cite{Loy_Eklundh}, but the lack of stable features in Cubelets was still too much of a problem for it to work here. Additionally, the \cite{Loy_Eklundh} method finds symmetric matches other than the Cubelet faces.\\ 
+We also attempted to use SURF features to detect the Cubelets through their rotational symmetry.  Because they are rotationally symmetrical at 90 degrees, we assumed this would make the features appear more stable. This method has been effective for other scenarios \cite{Loy_Eklundh}, but the lack of stable features in Cubelets was still too much of a problem for it to work here. Additionally, this method finds symmetric matches other than the Cubelet faces.\\ 
 
 {\includegraphics[width=2.5in]{surf.png}} \\
 
@@ -801,19 +801,46 @@ The authors would like to thank Professor Nikolaus Correll and the CSCI 7000 cla
 G. Loy and J. Eklundh, \emph{Detecting Symmetry and Symmetric Constellations of Features}
 \relax ECCV 2006, Part II, LNCS 3952, pp. 508-–521, 2006.
 
-\bibitem{Cubelets}
-\bibitem{Clam}
-\bibitem{ROS}
-\bibitem{SIFT}
-\bibitem{SURF}
-\bibitem{Kinect}
-\bibitem{OpenCV}
-\bibitem{OpenNI}
-\bibitem{Canny}
-\bibitem{Sobel}
-\bibitem{Hough}
-\bibitem{POSIT}
 
+\bibitem{Cubelets}
+Eric Schweikardt. 2010. Modular robotics studio. In Proceedings of the fifth international conference on Tangible, embedded, and embodied interaction (TEI '11). ACM, New York, NY, USA, 353-356. DOI=10.1145/1935701.1935784 http://doi.acm.org/10.1145/1935701.1935784
+
+\bibitem{Clam}
+http://correll.cs.colorado.edu/clam/
+
+\bibitem{ROS}
+Morgan Quigley, Brian Gerkey, Ken Conley, Josh Faust, Tully Foote, Jeremy Leibs, Eric Berger, Rob Wheeler, Andrew Ng. "ROS: an open-source Robot Operating System". http://www.ros.org/
+
+\bibitem{SIFT}
+Lowe, David G. (1999). "Object recognition from local scale-invariant features". Proceedings of the International Conference on Computer 
+Vision. 2. pp. 1150–1157. doi:10.1109/ICCV.1999.790410.
+
+\bibitem{SURF}
+Herbert Bay, Andreas Ess, Tinne Tuytelaars, Luc Van Gool "SURF: Speeded Up Robust Features", Computer Vision and Image Understanding (CVIU), Vol. 110, No. 3, pp. 346--359, 2008
+
+\bibitem{Kinect}
+http://www.xbox.com/kinect
+
+\bibitem{OpenCV}
+http://opencv.willowgarage.com/
+
+\bibitem{OpenNI}
+http://75.98.78.94/default.aspx
+
+\bibitem{Canny}
+Canny, J., A Computational Approach To Edge Detection, IEEE Trans. Pattern Analysis and Machine Intelligence, 8(6):679–698, 1986.
+
+\bibitem{Sobel}
+K. Engel (2006). Real-time volume graphics,. pp. 112–114.
+
+\bibitem{Hough}
+http://en.wikipedia.org/wiki/Hough\_transform
+
+\cite{MSER}
+Donoser, M. and Bischof, H. Efficient Maximally Stable Extremal Region (MSER) Tracking CVPR, 2006.
+
+\bibitem{POSIT}
+Daniel DeMenthon and Larry S. Davis, "Model-Based Object Pose in 25 Lines of Code", International Journal of Computer Vision, 15, pp. 123-141, June 1995.
 \end{thebibliography}
 
 
