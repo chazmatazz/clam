@@ -420,9 +420,10 @@ We describe a method for detecting and localizing Modular Robotics Cubelets in a
 
 \section{Introduction}
 % no \IEEEPARstart
-The purpose of this research is to produce a vision subsystem to the system necessary to accomplish the overall goal of 'robots building robots'.  The 'robots building robots' project involves the assembly of robots made up of Modular Robotics Cubelets. Cubelets are a robotic toy consisting of a set of small cubes. Each cube, or Cubelet, is approximately 50mm on a side. Cubelets attach to one another by way of keyed magnetic faces. Each Cubelet contains a small computer. A Cubelet may be an actuator, a sensor, a thinking block or a battery block. Actuators have an actuation face and respond to incoming signals. Sensors have a sensor face and sense the environment and send out a signal. Thinking blocks change the signal received from neighbors in a predetermined way, e.g. a Inverse block inverts the signal received. The battery block provides power.\\
+The purpose of this research is to produce a vision subsystem to the system necessary to accomplish the overall goal of 'robots building robots'.  The 'robots building robots' project involves the assembly of robots made up of Modular Robotics Cubelets 
+\cite{Cubelets}. Cubelets are a robotic toy consisting of a set of small cubes. Each cube, or Cubelet, is approximately 50mm on a side. Cubelets attach to one another by way of keyed magnetic faces. Each Cubelet contains a small computer. A Cubelet may be an actuator, a sensor, a thinking block or a battery block. Actuators have an actuation face and respond to incoming signals. Sensors have a sensor face and sense the environment and send out a signal. Thinking blocks change the signal received from neighbors in a predetermined way, e.g. a Inverse block inverts the signal received. The battery block provides power.\\
 
-For the purposes of the overall goal of 'robots building robots', we are concerned with autonmously assembling the Cubelets into a predetermined structure that forms a robot. We assume that the Cubelets start scattered over the work surface, a flat, featureless surface. We intend to build the construction using the Clam arm, a small robotic arm intended for research, with a suitable grasper. We also intend to use ROS (Robot Operating System) to bring together the entire system.\\
+For the purposes of the overall goal of 'robots building robots', we are concerned with autonmously assembling the Cubelets into a predetermined structure that forms a robot. We assume that the Cubelets start scattered over the work surface, a flat, featureless surface. We intend to build the construction using the Clam arm \cite{Clam}, a small robotic arm intended for research, with a suitable grasper. We also intend to use ROS (Robot Operating System) \cite{ROS} to bring together the entire system.\\
 
 We assume that a vision subsystem is a necessary subsystem of the overall system. The vision subsystem will be used to direct the arm and grasper. The vision subsystem reifies visual and aligned depth camera data into an ontology that represents the arrangement of Cubelets on the work surface. This ontology can then be consumed by other parts of the system.\\
 
@@ -431,7 +432,7 @@ Our engineering solution provides a partial technology for providing a useful on
 We hypothesize that template matching on images preprocessed with a novel line detection algorithm can provide position and orientation data. We hypothesize that color matching on matched areas can provide partial information on the type of Cubelet.
 
 \subsection{Background}
-The problem of providing the desired ontology is largely one of object detection, a well-known problem in computer vision. Object detection methods include feature detection methods such as SIFT and SURF as well as template matching, segmentation and classification of segments, and flexible template matching. Feature based-methods are generally faster than template matching. We present evidence that SURF does not work well with Cubelets due to their particular appearance.
+The problem of providing the desired ontology is largely one of object detection, a well-known problem in computer vision. Object detection methods include feature detection methods such as SIFT \cite{SIFT} and SURF \cite{SURF} as well as template matching, segmentation and classification of segments, and flexible template matching. Feature based-methods are generally faster than template matching. We present evidence that SURF does not work well with Cubelets due to their particular appearance.
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
@@ -531,15 +532,15 @@ The problem of providing the desired ontology is largely one of object detection
 % footnotes above bottom floats. This can be corrected via the \fnbelowfloat
 % command of the stfloats package.
 
-\section{Matters and Materials}
-Our experimental setup consisted of a Xbox Kinect camera mounted approximately 65cm above the work surface. This distance was far enough for the depth sensor to work even if the blocks are stacked, but close enough to make out features on the faces of the Cubelets. The work surface was covered in white paper. The lighting was not controlled but was normal office lighting.\\
+\section{Materials and Methods}
+Our experimental setup consisted of a Xbox Kinect camera \cite{Kinect} mounted approximately 65cm above the work surface. This distance was far enough for the depth sensor to work even if the blocks are stacked, but close enough to make out features on the faces of the Cubelets. The work surface was covered in white paper. The lighting was not controlled but was normal office lighting.\\
 
 We generated three sets of 10-14 images each. Within each set, the images were taken with the same setup and lighting conditions. Each image takes a picture of an arrangement of Cubelets. The Cubelet arrangements were randomly determined by us.\\
 
-Our software is written in Python and uses ROS with OpenCV and openni\_kinect.
+Our software is written in Python and uses ROS with OpenCV \cite{OpenCV} and OpenNI \cite{OpenNI}.
 
 \subsection{General Methods}
-One image from each set was used as the source of templates for template matching. For this image, we hand-labeled the location of one cube of each color with (x,y) information. For each set of images, we determined a template radius, corresponding roughly to the circular portion of the cube face.  
+One image from each set was used as ground truth. For this image, we hand-labeled the location of one Cubelet of each color with (x,y) information. For each set of images, we determined a template radius, corresponding roughly to the circular portion of the cube face.  
 
 \subsection{SURF Feature Detection}
 The first method we attempted was trying to match SURF features between a template image consisting of a single cube and test images of a scene containing one or more Cubelets. We were able to obtain many features for each Cubelet. The first issue we found was the 4-way rotational symmetry of the Cubelets' faces caused erroneous feature matches. In an effort to fix this problem, we selected only features on one quarter of the face. However, we found that even then the features were too easily confused with each other, i.e. the features were not stable.\\
@@ -589,7 +590,7 @@ We also attempted to use SURF features to detect the Cubelets through their rota
 
 We then attempted to match faces to templates, first based on grayscale images and then based on RGB images. These methods were promising.\\
 
-In order to better match the Cubelet faces, specifically the clear faces, we applied a novel form of edge detection/enhancement to the images. Without doing this, the features of the clear Cubelets were not very distinct.  We found the Canny edge detector to be too imprecise; a slight adjustment to the upper and lower edge merge thresholds would change the shape of fine detail edges. Sobel suffered from a different problem in that the edges that it did detect were very weakly enhanced.  In order to improve the edge enhancement, we  wrote our own novel filter which is very similar to how Sobel operates.  Shown are examples of Sobel and Canny run on our test images, as well as the two versions of our edge enhancement filter.  \\
+In order to better match the Cubelet faces, specifically the clear faces, we applied a novel form of edge detection/enhancement to the images. Without doing this, the features of the clear Cubelets were not very distinct.  We found the Canny edge detector \cite{Canny} to be too imprecise; a slight adjustment to the upper and lower edge merge thresholds would change the shape of fine detail edges. The Sobel edge detector \cite{Sobel} suffered from a different problem in that the edges that it did detect were very weakly enhanced.  In order to improve the edge enhancement, we  wrote our own novel filter which is very similar to how Sobel operates.  Shown are examples of Sobel and Canny run on our test images, as well as the two versions of our edge enhancement filter.  \\
 
 The first variant of our filter behaves as follows: for each pixel, the value of at pixel becomes the product of the difference between the pixels above and below and the difference between the pixel to the left and the right.
 \\[6pt]
@@ -621,7 +622,7 @@ Once a match was found in the match image, we excluded a circular area around th
 \subsection{Rotation Estimation}
 In order to determine the rotation of each Cubelet, we used the relatively distinct edges of the Cubelet.  We started by applying our edge enhancement filter to the test image.  We then apply blur, dilate, and erode operations to the resulting image in order to merge the edges of each Cubelet into a single connect component.  This supresses the internal features of the Cubelet, such as the metal connectors. We then applied Canny edge detection to the image, resulting in only the outlines of the cubes.  \\
 
-After Canny edge detection has been applied, we used OpenCV's Hough line detector find the line segments present.  The detector returns lists of line segment endpoints, from which we calculate the rotation of each line segment modulo $ \frac{\pi}{2}$ .  For each Cubelet detected in template matching, we determined all the line segments within some radius of the Cubelet center, then averaged the calculated angles for those line segments to obtain the rotation angle for the cube. \\
+After Canny edge detection has been applied, we used the Hough line detector \cite{Hough} find the line segments present.  The detector returns lists of line segment endpoints, from which we calculate the rotation of each line segment modulo $ \frac{\pi}{2}$ .  For each Cubelet detected in template matching, we determined all the line segments within some radius of the Cubelet center, then averaged the calculated angles for those line segments to obtain the rotation angle for the cube. \\
 
 As this rotation estimation method relies solely on the ability to detect the outlines of the cube, anything that hinders that would  affect the accuracy of this estimation method. Since our environment does not contain clutter, this was not an issue.
 
@@ -673,11 +674,11 @@ The results of the second data set were worse than the results for the other dat
 On some occasions, the rotation estimation failed to give any estimation at all.  This was due to a lack of strong edges detected within the proximity of a Cubelet's center point.  Thus, anything that could cause an edge to be less distinct could result in a failure of rotation detection.  Cubelets that were completely surrounded were completely prone to this, but both surrounded Cubelets and less distinct edge issues could possibly be solved by comparing to Cubelets that were close enough that they were likely attached to the undetermined Cubelet.
 
 \subsection{Further Work}
-The major limitation of our approach is that it requires a fixed overhead view of the scene.  This constraint allowed us to use template matching to find cubelets easily within the scene, limits its usefulness on a robot that can look around in its environment.  Our methods do not work very well if the cubes were to be seen from non-normal angle.  This change in perspective would require us to have a more thorough method of pose estimation.  \\
+The major limitation of our approach is that it requires a fixed overhead view of the scene.  This constraint allowed us to use template matching to find Cubelets easily within the scene, limits its usefulness on a robot that can look around in its environment.  Our methods do not work very well if the Cubelets were to be seen from non-normal angle.  This change in perspective would require us to have a more thorough method of pose estimation.  \\
 
-In order to address these concerns, we would need to find an object recognition method that is robust against scale, rotation, brightness differences, and affine transformations.  As we have already found that SURF is insufficient, we would investigate matching methods using other feature detectors, such as MSER (Maximally-Stable Extremal Region), which is very robust against affine transformations.\\
+In order to address these concerns, we would need to find an object recognition method that is robust against scale, rotation, brightness differences, and affine transformations.  As we have already found that SURF is insufficient, we would investigate matching methods using other feature detectors, such as MSER (Maximally-Stable Extremal Region) \cite{MSER}, which is very robust against affine transformations.\\
 
-Given a set of matching points between a training image and the target image, we could find the transform relating those sets of points, and calculate the pose of those points in the camera space, provided that the camera parameters were known.  Many different methods for doing this exist, including POSIT, which works on four non-coplanar points.
+Given a set of matching points between a training image and the target image, we could find the transform relating those sets of points, and calculate the pose of those points in the camera space, provided that the camera parameters were known.  Many different methods for doing this exist, including POSIT \cite{POSIT}, which works on four non-coplanar points.
 
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -799,6 +800,19 @@ The authors would like to thank Professor Nikolaus Correll and the CSCI 7000 cla
 \bibitem{Loy_Eklundh}
 G. Loy and J. Eklundh, \emph{Detecting Symmetry and Symmetric Constellations of Features}
 \relax ECCV 2006, Part II, LNCS 3952, pp. 508-–521, 2006.
+
+\bibitem{Cubelets}
+\bibitem{Clam}
+\bibitem{ROS}
+\bibitem{SIFT}
+\bibitem{SURF}
+\bibitem{Kinect}
+\bibitem{OpenCV}
+\bibitem{OpenNI}
+\bibitem{Canny}
+\bibitem{Sobel}
+\bibitem{Hough}
+\bibitem{POSIT}
 
 \end{thebibliography}
 

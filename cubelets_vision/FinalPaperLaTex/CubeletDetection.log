@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2012.5.6)  8 MAY 2012 19:14
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2012.5.6)  9 MAY 2012 10:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -322,143 +322,181 @@ Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: subfig package v1.3 is loaded.
 Package caption Info: End \AtBeginDocument code.
 
-Underfull \hbox (badness 10000) in paragraph at lines 423--424
+
+LaTeX Warning: Citation `Cubelets' on page 1 undefined on input line 424.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 423--425
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 425--426
+LaTeX Warning: Citation `Clam' on page 1 undefined on input line 426.
+
+
+LaTeX Warning: Citation `ROS' on page 1 undefined on input line 426.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 426--427
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 427--428
+Underfull \hbox (badness 10000) in paragraph at lines 428--429
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 429--430
+Underfull \hbox (badness 10000) in paragraph at lines 430--431
 
  []
+
+
+LaTeX Warning: Citation `SIFT' on page 1 undefined on input line 435.
+
+
+LaTeX Warning: Citation `SURF' on page 1 undefined on input line 435.
 
 <Canny_50_100_c.jpg, id=1, 216.81pt x 175.65625pt>
 File: Canny_50_100_c.jpg Graphic file (type jpg)
  <use Canny_50_100_c.jpg>
-Package pdftex.def Info: Canny_50_100_c.jpg used on input line 479.
+Package pdftex.def Info: Canny_50_100_c.jpg used on input line 480.
 (pdftex.def)             Requested size: 180.67499pt x 146.38698pt.
 
 <Sobel_1_1_c.jpg, id=2, 226.8475pt x 171.64125pt>
 File: Sobel_1_1_c.jpg Graphic file (type jpg)
  <use Sobel_1_1_c.jpg>
-Package pdftex.def Info: Sobel_1_1_c.jpg used on input line 479.
+Package pdftex.def Info: Sobel_1_1_c.jpg used on input line 480.
 (pdftex.def)             Requested size: 180.67499pt x 136.70555pt.
 
 <vh1_c.jpg, id=3, 227.85126pt x 166.6225pt>
 File: vh1_c.jpg Graphic file (type jpg)
  <use vh1_c.jpg>
-Package pdftex.def Info: vh1_c.jpg used on input line 491.
+Package pdftex.def Info: vh1_c.jpg used on input line 492.
 (pdftex.def)             Requested size: 180.67499pt x 132.1261pt.
 
 <vh2_c.jpg, id=4, 229.85875pt x 165.61874pt>
 File: vh2_c.jpg Graphic file (type jpg)
  <use vh2_c.jpg>
-Package pdftex.def Info: vh2_c.jpg used on input line 491.
+Package pdftex.def Info: vh2_c.jpg used on input line 492.
 (pdftex.def)             Requested size: 180.67499pt x 130.18788pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 535--536
+
+LaTeX Warning: Citation `Kinect' on page 1 undefined on input line 536.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 536--537
 
  []
 
 
-Underfull \hbox (badness 2662) in paragraph at lines 537--538
+Underfull \hbox (badness 2662) in paragraph at lines 538--539
 \OT1/ptm/m/n/10 of Cubelets. The Cubelet ar-range-ments were ran-domly
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 537--538
+Underfull \hbox (badness 10000) in paragraph at lines 538--539
 
  []
+
+
+LaTeX Warning: Citation `OpenCV' on page 1 undefined on input line 540.
+
+
+LaTeX Warning: Citation `OpenNI' on page 1 undefined on input line 540.
 
 [1{/usr/local/texlive/2011/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 545--546
+Underfull \hbox (badness 10000) in paragraph at lines 546--547
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 547--548
+Underfull \hbox (badness 10000) in paragraph at lines 548--549
 
  []
 
 <surf.png, id=14, 248.42813pt x 282.30469pt>
 File: surf.png Graphic file (type png)
  <use surf.png>
-Package pdftex.def Info: surf.png used on input line 549.
+Package pdftex.def Info: surf.png used on input line 550.
 (pdftex.def)             Requested size: 180.67499pt x 205.31393pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 549--550
+Underfull \hbox (badness 10000) in paragraph at lines 550--551
 
  []
 
 <Rotation_Ex_1.png, id=15, 644.4075pt x 511.9125pt>
 File: Rotation_Ex_1.png Graphic file (type png)
  <use Rotation_Ex_1.png>
-Package pdftex.def Info: Rotation_Ex_1.png used on input line 559.
+Package pdftex.def Info: Rotation_Ex_1.png used on input line 560.
 (pdftex.def)             Requested size: 180.67499pt x 143.5298pt.
 
 <Rotation_Ex_2.png, id=17, 644.4075pt x 511.9125pt>
 File: Rotation_Ex_2.png Graphic file (type png)
  <use Rotation_Ex_2.png>
-Package pdftex.def Info: Rotation_Ex_2.png used on input line 559.
+Package pdftex.def Info: Rotation_Ex_2.png used on input line 560.
 (pdftex.def)             Requested size: 180.67499pt x 143.5298pt.
 
 <Rotation_Ex_3.png, id=18, 644.4075pt x 511.9125pt>
 File: Rotation_Ex_3.png Graphic file (type png)
  <use Rotation_Ex_3.png>
-Package pdftex.def Info: Rotation_Ex_3.png used on input line 571.
+Package pdftex.def Info: Rotation_Ex_3.png used on input line 572.
 (pdftex.def)             Requested size: 180.67499pt x 143.5298pt.
 
 <Rotation_Ex_4.png, id=19, 644.4075pt x 511.9125pt>
 File: Rotation_Ex_4.png Graphic file (type png)
  <use Rotation_Ex_4.png>
-Package pdftex.def Info: Rotation_Ex_4.png used on input line 571.
+Package pdftex.def Info: Rotation_Ex_4.png used on input line 572.
 (pdftex.def)             Requested size: 180.67499pt x 143.5298pt.
 
 <Rotation_Ex_5.png, id=20, 644.4075pt x 511.9125pt>
 File: Rotation_Ex_5.png Graphic file (type png)
  <use Rotation_Ex_5.png>
-Package pdftex.def Info: Rotation_Ex_5.png used on input line 583.
+Package pdftex.def Info: Rotation_Ex_5.png used on input line 584.
 (pdftex.def)             Requested size: 180.67499pt x 143.5298pt.
 
 <Rotation_Ex_6.png, id=21, 644.4075pt x 511.9125pt>
 File: Rotation_Ex_6.png Graphic file (type png)
  <use Rotation_Ex_6.png>
-Package pdftex.def Info: Rotation_Ex_6.png used on input line 583.
+Package pdftex.def Info: Rotation_Ex_6.png used on input line 584.
 (pdftex.def)             Requested size: 180.67499pt x 143.5298pt.
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 590--591
+Underfull \hbox (badness 10000) in paragraph at lines 591--592
+
+ []
+
+[2 <./Canny_50_100_c.jpg> <./Sobel_1_1_c.jpg> <./vh1_c.jpg> <./vh2_c.jpg> <./su
+rf.png>]
+
+LaTeX Warning: Citation `Canny' on page 3 undefined on input line 593.
+
+
+LaTeX Warning: Citation `Sobel' on page 3 undefined on input line 593.
+
+
+Underfull \hbox (badness 5637) in paragraph at lines 593--594
+\OT1/ptm/m/n/10 the clear faces, we ap-plied a novel form of edge
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 593--594
+\OT1/ptm/m/n/10 de-tec-tion/enhancement to the im-ages. With-out do-ing
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 593--594
 
  []
 
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [2 <./Canny_50_100_c.jpg> <./Sobel_1_1_c.jpg> <./vh1_c.jpg> <./vh2_c.jpg> <./s
-urf.png>]
-Underfull \hbox (badness 5637) in paragraph at lines 592--593
-\OT1/ptm/m/n/10 the clear faces, we ap-plied a novel form of edge
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 592--593
-
- []
 
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
@@ -466,91 +504,101 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
  [3 <./Rotation_Ex_1.png> <./Rotation_Ex_2.png> <./Rotation_Ex_3.png> <./Rotati
 on_Ex_4.png> <./Rotation_Ex_5.png> <./Rotation_Ex_6.png>]
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 596.
+(Font)              <7> on input line 597.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 596.
+(Font)              <5> on input line 597.
 
-Underfull \hbox (badness 10000) in paragraph at lines 594--606
+Underfull \hbox (badness 10000) in paragraph at lines 595--607
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 611--618
+Underfull \hbox (badness 10000) in paragraph at lines 612--619
 \OT1/ptm/m/n/10 the tem-plate match-ing func-tion built into OpenCV,
  []
 
 
-Underfull \hbox (badness 5417) in paragraph at lines 611--618
+Underfull \hbox (badness 5417) in paragraph at lines 612--619
 \OT1/ptm/m/n/10 equa-tion we used, CV[]TM[]SQDIFF[]NORMED, is as
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 622--623
+Underfull \hbox (badness 10000) in paragraph at lines 623--624
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 624--625
+LaTeX Warning: Citation `Hough' on page 4 undefined on input line 625.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 625--626
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 636--637
+Underfull \hbox (badness 10000) in paragraph at lines 637--638
 
  []
 
 <ds1p8.jpg, id=34, 642.4pt x 481.8pt>
 File: ds1p8.jpg Graphic file (type jpg)
  <use ds1p8.jpg>
-Package pdftex.def Info: ds1p8.jpg used on input line 648.
+Package pdftex.def Info: ds1p8.jpg used on input line 649.
 (pdftex.def)             Requested size: 180.67499pt x 135.5059pt.
 
 <ds3p9.jpg, id=35, 642.4pt x 481.8pt>
 File: ds3p9.jpg Graphic file (type jpg)
  <use ds3p9.jpg>
-Package pdftex.def Info: ds3p9.jpg used on input line 648.
+Package pdftex.def Info: ds3p9.jpg used on input line 649.
 (pdftex.def)             Requested size: 180.67499pt x 135.5059pt.
 
 <ds2p7.jpg, id=36, 642.4pt x 481.8pt>
 File: ds2p7.jpg Graphic file (type jpg)
  <use ds2p7.jpg>
-Package pdftex.def Info: ds2p7.jpg used on input line 660.
+Package pdftex.def Info: ds2p7.jpg used on input line 661.
 (pdftex.def)             Requested size: 180.67499pt x 135.5059pt.
 
 <ds3p8.jpg, id=37, 642.4pt x 481.8pt>
 File: ds3p8.jpg Graphic file (type jpg)
  <use ds3p8.jpg>
-Package pdftex.def Info: ds3p8.jpg used on input line 660.
+Package pdftex.def Info: ds3p8.jpg used on input line 661.
 (pdftex.def)             Requested size: 180.67499pt x 135.5059pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 667--668
+Underfull \hbox (badness 10000) in paragraph at lines 668--669
 
  []
 
 [4]
-Underfull \hbox (badness 10000) in paragraph at lines 669--670
+Underfull \hbox (badness 10000) in paragraph at lines 670--671
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 671--672
+Underfull \hbox (badness 10000) in paragraph at lines 672--673
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 676--677
+Underfull \hbox (badness 10000) in paragraph at lines 677--678
 
  []
 
 [5 <./ds1p8.jpg> <./ds3p9.jpg> <./ds2p7.jpg> <./ds3p8.jpg>]
-Underfull \hbox (badness 10000) in paragraph at lines 678--679
+
+LaTeX Warning: Citation `MSER' on page 6 undefined on input line 679.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 679--680
 
  []
 
+
+LaTeX Warning: Citation `POSIT' on page 6 undefined on input line 681.
+
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 688.
+(Font)              <8> on input line 689.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 688.
+(Font)              <6> on input line 689.
 Missing character: There is no â in font ptmr7t!
 Missing character: There is no € in font ptmr7t!
 Missing character: There is no “ in font ptmr7t!
@@ -567,17 +615,20 @@ Before submitting the final camera ready copy, remember to:
 
 [6] (./CubeletDetection.aux)
 
+LaTeX Warning: There were undefined references.
+
+
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 3002 strings out of 493610
- 49703 string characters out of 3142405
- 112351 words of memory out of 3000000
- 6278 multiletter control sequences out of 15000+200000
- 37690 words of font info for 71 fonts, out of 3000000 for 9000
+ 3016 strings out of 493610
+ 49800 string characters out of 3142405
+ 113351 words of memory out of 3000000
+ 6291 multiletter control sequences out of 15000+200000
+ 38797 words of font info for 72 fonts, out of 3000000 for 9000
  834 hyphenation exceptions out of 8191
- 38i,9n,47p,885b,293s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 38i,9n,47p,819b,293s stack positions out of 5000i,500n,10000p,200000b,50000s
 {/usr/local/texlive/2011/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
 exlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/te
 xlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/tex
@@ -594,7 +645,7 @@ t/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2011/texmf-dist/fonts/ty
 pe1/urw/times/utmbi8a.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/urw/t
 imes/utmr8a.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/urw/times/utmri
 8a.pfb>
-Output written on CubeletDetection.pdf (6 pages, 1446941 bytes).
+Output written on CubeletDetection.pdf (6 pages, 1447562 bytes).
 PDF statistics:
  106 PDF objects out of 1000 (max. 8388607)
  61 compressed objects within 1 object stream
